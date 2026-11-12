@@ -414,6 +414,7 @@ const API = {
     return Promise.resolve(Object.assign({},DEMO_DATA,{bookings:Demo.read()}));
   },
   submit(f){
+    if(OFFLINE) return Promise.resolve({ok:false,type:'invalid',message:'Hệ thống đăng ký đang tạm ngưng kết nối. Vui lòng thử lại sau hoặc liên hệ người quản lý phòng máy.'});
     if(HAS_GAS) return this.call('submitBooking',f);
     // text/plain để tránh yêu cầu CORS preflight mà Apps Script không hỗ trợ
     if(HAS_URL) return this.fetchJSON(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(f)});
@@ -455,7 +456,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const $=id=>document.getElementById(id);
 
 /* =================== TRẠNG THÁI =================== */
-let DATA=null, NOW=vnNow(), WEEK=null, VIEW_ROOM=null;
+let OFFLINE=false, DATA=null, NOW=vnNow(), WEEK=null, VIEW_ROOM=null;
 const form={room:'',date:'',periods:[]};
 
 const roomLabel=id=>{const r=DATA.rooms.find(x=>x.id===id);return r?`${r.name} (${r.id})`:id};
@@ -709,8 +710,14 @@ function bind(){
 (async function init(){
   if(!HAS_GAS&&!HAS_URL) $('demoBar').hidden=false;
   bind();
-  try{ DATA=await API.load(); }catch(e){ $('nowGrid').innerHTML='<div class="loading">Không tải được dữ liệu. Vui lòng tải lại trang.</div>'; return }
-  $('schoolName').textContent=(DATA.config.school||'')+' · Lịch sử dụng & đăng ký mượn phòng';
+  try{ DATA=await API.load(); }catch(e){
+    if(!HAS_URL){ $('nowGrid').innerHTML='<div class="loading">Không tải được dữ liệu. Vui lòng tải lại trang.</div>'; return }
+    // Chưa kết nối được Apps Script: vẫn hiện TKB gốc, tạm khóa gửi đăng ký
+    OFFLINE=true; DATA=Object.assign({},DEMO_DATA,{bookings:[]}); DATA.config=Object.assign({},DEMO_DATA.config,{school:''});
+    const bar=$('demoBar'); bar.hidden=false;
+    bar.textContent='⚠️ Chưa kết nối được hệ thống đăng ký – đang hiển thị thời khóa biểu gốc. Tạm thời chưa gửi được phiếu đăng ký, vui lòng quay lại sau.';
+  }
+  $('schoolName').textContent=(DATA.config.school?DATA.config.school+' · ':'')+'Lịch sử dụng & đăng ký mượn phòng';
   NOW=vnNow();
   VIEW_ROOM=DATA.rooms[0].id;
   WEEK=mondayOf(dayIdx(NOW.date)<0?addDays(NOW.date,2):NOW.date);
