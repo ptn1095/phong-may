@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đăng ký phòng máy tính</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#8a8fc0; --bg2:#9ca1cf;
+  --panel:#5cb8e6; --panel-in:#e9f6fe; --edge:#1f6fa0; --edge2:#2f8fc6;
+  --paper:#fbefdf; --paper-edge:#c9977a; --paper-line:#ead3bb;
+  --ink:#23324a; --muted:#5d6b80;
+  --yellow:#ffc531; --yellow-d:#d99400;
+  --orange:#ff9b3d; --orange-d:#cc6a12;
+  --green:#6cc04a; --green-d:#3f8f26;
+  --red:#ef5350; --red-d:#b3302d;
+  --purple:#8f63d1; --purple-d:#5e3a9a;
+  --gray:#a3acb7; --gray-d:#6f7986;
+  --class:#ffe2b8; --class-ink:#8a4a00;
+  --book:#e6dbfa; --book-ink:#4b2a86;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:'Baloo 2',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color:var(--ink); background:var(--bg);
+  background-image:radial-gradient(rgba(255,255,255,.13) 2px,transparent 2.5px);
+  background-size:26px 26px; min-height:100vh; padding:16px 16px 40px; line-height:1.35;
+}
+.wrap{max-width:1100px;margin:0 auto}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+
+/* ---------- Header ---------- */
+header{text-align:center;margin:8px 0 26px}
+.ribbon{
+  position:relative;display:inline-block;background:var(--yellow);color:#7a4a00;
+  font-weight:800;font-size:clamp(20px,4.6vw,34px);letter-spacing:.5px;
+  padding:6px 34px;border-radius:10px;box-shadow:0 6px 0 var(--yellow-d);text-transform:uppercase;
+}
+.ribbon::before,.ribbon::after{
+  content:"";position:absolute;top:12px;width:28px;height:100%;background:var(--yellow-d);z-index:-1;
+}
+.ribbon::before{left:-20px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%,35% 50%)}
+.ribbon::after{right:-20px;clip-path:polygon(0 0,100% 0,65% 50%,100% 100%,0 100%)}
+.sub{color:#fff;font-weight:700;margin-top:14px;font-size:18px;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.clock{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.9);
+  border-radius:999px;padding:3px 14px;margin-top:8px;font-weight:700;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.demo{background:#fff3c4;border:3px dashed var(--yellow-d);border-radius:14px;padding:8px 12px;margin:0 0 18px;
+  font-weight:600;color:#7a4a00;text-align:center}
+
+/* ---------- Panels ---------- */
+.panel{
+  background:var(--panel);border:4px solid var(--edge);border-radius:24px;
+  box-shadow:0 7px 0 var(--edge),0 16px 28px rgba(30,40,90,.25);
+  padding:30px 18px 18px;margin:34px 0 26px;position:relative;
+}
+.panel>.tag{
+  position:absolute;top:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:var(--edge2);color:#fff;font-weight:800;font-size:19px;padding:4px 22px;border-radius:12px;
+  border:3px solid var(--edge);box-shadow:0 4px 0 var(--edge);letter-spacing:.4px;
+}
+.inner{background:var(--panel-in);border-radius:16px;padding:14px;border:3px solid var(--edge2)}
+
+/* ---------- Now cards ---------- */
+.now-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.room-card{background:#fff;border-radius:18px;border:3px solid var(--edge2);padding:14px;display:flex;gap:14px;align-items:center;
+  box-shadow:0 5px 0 rgba(31,111,160,.35)}
+.monitor{flex:0 0 70px;height:58px;border-radius:10px;border:5px solid #34465f;background:var(--gray);position:relative;
+  display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px}
+.monitor::after{content:"";position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:30px;height:9px;
+  background:#34465f;border-radius:0 0 6px 6px}
+.st-free .monitor{background:var(--green)} .st-class .monitor{background:var(--orange)}
+.st-book .monitor{background:var(--purple)} .st-off .monitor{background:var(--gray)}
+.room-card h3{margin:0;font-size:20px;line-height:1.1}
+.room-card .badge{display:inline-block;color:#fff;font-weight:800;border-radius:9px;padding:1px 10px;margin:4px 0 2px;font-size:15px}
+.st-free .badge{background:var(--green)} .st-class .badge{background:var(--orange)}
+.st-book .badge{background:var(--purple)} .st-off .badge{background:var(--gray-d)}
+.room-card .detail{font-size:15px;color:var(--muted)} .room-card .detail b{color:var(--ink)}
+.now-note{text-align:center;color:#fff;font-weight:700;margin-top:12px;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+
+/* ---------- Buttons ---------- */
+.btn{border:none;cursor:pointer;border-radius:14px;padding:9px 18px;font-weight:800;color:#fff;background:var(--orange);
+  box-shadow:0 5px 0 var(--orange-d);text-shadow:0 2px 0 rgba(0,0,0,.18);transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--orange-d)}
+.btn.green{background:var(--green);box-shadow:0 5px 0 var(--green-d)} .btn.green:active{box-shadow:0 2px 0 var(--green-d)}
+.btn.blue{background:var(--edge2);box-shadow:0 5px 0 var(--edge)} .btn.blue:active{box-shadow:0 2px 0 var(--edge)}
+.btn.yellow{background:var(--yellow);color:#6b4100;text-shadow:none;box-shadow:0 5px 0 var(--yellow-d)}
+.btn.red{background:var(--red);box-shadow:0 5px 0 var(--red-d)}
+.btn.small{padding:5px 12px;font-size:15px;border-radius:11px}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn:focus-visible,.tab:focus-visible,.pchip:focus-visible{outline:3px solid #fff;outline-offset:2px}
+
+/* ---------- Timetable ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.weeknav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.weeklabel{background:#fff;border-radius:12px;padding:5px 14px;font-weight:800;min-width:200px;text-align:center;
+  border:3px solid var(--edge2)}
+.tabs{display:flex;gap:6px;background:var(--edge);padding:4px;border-radius:14px}
+.tab{border:none;cursor:pointer;background:transparent;color:#d9efff;font-weight:800;padding:5px 14px;border-radius:10px}
+.tab.on{background:var(--yellow);color:#6b4100;box-shadow:0 3px 0 var(--yellow-d)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:14px;font-weight:600;margin:10px 2px 0}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:5px}
+.tt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px}
+table.tt{width:100%;min-width:640px;border-collapse:separate;border-spacing:4px;table-layout:fixed}
+.tt th{background:var(--edge2);color:#fff;border-radius:10px;padding:6px 4px;font-size:15px;font-weight:800}
+.tt th small{display:block;font-weight:600;opacity:.9;font-size:13px}
+.tt th.today{background:var(--yellow);color:#6b4100}
+.tt th.ph{width:84px}
+.tt td{height:56px;border-radius:10px;background:#fff;padding:3px 5px;font-size:13.5px;vertical-align:middle;text-align:center;
+  border:2px solid transparent}
+.tt td.pcell{background:#d4ecfb;font-weight:800;font-size:14px;line-height:1.1}
+.tt td.pcell small{display:block;font-weight:600;color:var(--muted);font-size:12px}
+.tt td.class{background:var(--class);color:var(--class-ink)}
+.tt td.book{background:var(--book);color:var(--book-ink)}
+.tt td.free{cursor:pointer;color:var(--green-d);font-weight:700}
+.tt td.free:hover{background:#e3f7d9;border-color:var(--green)}
+.tt td.free .plus{opacity:.35;transition:opacity .1s}
+.tt td.free:hover .plus{opacity:1}
+.tt td.past{background:#eef0f3;color:#9aa3ad;cursor:default}
+.tt td.past.class,.tt td.past.book{opacity:.55}
+.tt td.cur{border-color:var(--red);box-shadow:0 0 0 2px rgba(239,83,80,.35)}
+.tt tr.break td{height:12px;background:transparent;padding:0;font-size:12px;color:var(--edge);font-weight:800;text-align:left;padding-left:8px}
+.tt .c1{font-weight:800;font-size:15px;display:block;line-height:1.1}
+.tt .c2{font-size:12.5px;display:block;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- Notebook form ---------- */
+.notebook{
+  background:var(--paper);border:5px solid var(--paper-edge);border-radius:26px;margin:58px 0 26px;position:relative;
+  box-shadow:0 8px 0 #a7765a,0 18px 30px rgba(30,40,90,.25);padding:46px 22px 24px;
+  background-image:repeating-linear-gradient(transparent 0 33px,var(--paper-line) 33px 35px);
+}
+.rings{position:absolute;top:-34px;left:0;right:0;display:flex;justify-content:center;gap:clamp(40px,14vw,160px);pointer-events:none}
+.rings span{width:26px;height:62px;border-radius:14px;border:7px solid #6d5aa8;background:transparent;box-shadow:inset 0 0 0 3px #9d8bd6}
+.nb-title{position:absolute;top:22px;left:-12px;background:var(--orange);color:#fff;font-weight:800;font-size:20px;
+  padding:4px 22px 4px 26px;border-radius:0 12px 12px 0;box-shadow:0 4px 0 var(--orange-d);text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.nb-title::before{content:"";position:absolute;left:0;bottom:-12px;border-top:12px solid var(--orange-d);border-left:12px solid transparent}
+.close-x{position:absolute;top:-14px;right:-12px;width:36px;height:36px;border-radius:50%;background:var(--red);color:#fff;
+  border:3px solid #fff;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 0 var(--red-d)}
+form{margin-top:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.full{grid-column:1/-1}
+label.f{display:block;font-weight:800;margin-bottom:4px}
+label.f .req{color:var(--red)}
+.inp{width:100%;background:#fff;border:3px solid #d9b597;border-radius:13px;padding:8px 12px;outline:none;transition:border-color .1s}
+.inp:focus{border-color:var(--edge2)}
+.inp.bad{border-color:var(--red);background:#fff4f4}
+textarea.inp{min-height:76px;resize:vertical}
+.hint{font-size:13.5px;color:var(--muted);margin-top:2px}
+.err{font-size:13.5px;color:var(--red-d);font-weight:700;margin-top:2px;min-height:0}
+.roompick{display:flex;gap:10px;flex-wrap:wrap}
+.roompick label{flex:1 1 140px;cursor:pointer}
+.roompick input{position:absolute;opacity:0;pointer-events:none}
+.roompick .rp{display:block;background:#fff;border:3px solid #d9b597;border-radius:14px;padding:8px 12px;font-weight:800;text-align:center}
+.roompick input:checked+.rp{background:var(--panel);border-color:var(--edge);color:#fff;box-shadow:0 4px 0 var(--edge)}
+.roompick input:focus-visible+.rp{outline:3px solid var(--edge2);outline-offset:2px}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.pchip{cursor:pointer;border:3px solid #d9b597;background:#fff;border-radius:13px;padding:6px 4px;text-align:center;line-height:1.1;
+  font-weight:800;position:relative;user-select:none}
+.pchip small{display:block;font-weight:600;font-size:12.5px;color:var(--muted)}
+.pchip .who{display:block;font-size:12px;font-weight:700;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pchip.sel{background:var(--green);border-color:var(--green-d);color:#fff;box-shadow:0 4px 0 var(--green-d)}
+.pchip.sel small{color:#eaffdf}
+.pchip.busy{background:#ffe9e8;border-color:#f3a6a4;color:var(--red-d);cursor:not-allowed}
+.pchip.busy small{color:#c76b69}
+.pchip.past{background:#eef0f3;border-color:#d6dbe1;color:#a3acb7;cursor:not-allowed}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.commit{display:flex;gap:12px;align-items:flex-start;background:#fff;border:3px dashed var(--orange);border-radius:16px;padding:12px}
+.commit input{width:26px;height:26px;flex:0 0 26px;accent-color:var(--green);margin-top:2px;cursor:pointer}
+.commit label{font-weight:700;cursor:pointer}
+.linkbtn{background:none;border:none;color:var(--edge);font-weight:800;text-decoration:underline;cursor:pointer;padding:0}
+.actions{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.actions .btn{font-size:20px;padding:10px 30px}
+.summary{background:#fff;border-radius:14px;border:3px solid var(--edge2);padding:8px 12px;font-weight:600}
+.summary b{color:var(--edge)}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(25,30,70,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal.show{display:flex;animation:fade .15s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.mbox{background:var(--panel);border:4px solid var(--edge);border-radius:24px;box-shadow:0 8px 0 var(--edge);width:min(480px,100%);
+  max-height:88vh;overflow:auto;padding:62px 18px 18px;position:relative;animation:pop .25s cubic-bezier(.2,1.5,.5,1)}
+@keyframes pop{from{transform:scale(.8)}to{transform:scale(1)}}
+.mbox .ribbon{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:22px;white-space:nowrap;padding:4px 28px}
+.mbox.lose{background:#9fb0c2;border-color:#4d5d70;box-shadow:0 8px 0 #4d5d70}
+.mbox.lose .ribbon{background:#7d8a99;color:#fff;box-shadow:0 6px 0 #4d5d70}
+.mbox.lose .ribbon::before,.mbox.lose .ribbon::after{background:#4d5d70}
+.stars{text-align:center;font-size:40px;letter-spacing:4px;margin:6px 0 4px;color:var(--yellow);text-shadow:0 3px 0 var(--yellow-d)}
+.mbox.lose .stars{color:#5f6e80;text-shadow:0 3px 0 #3d4a59}
+.mbox .inner{font-size:16px}
+.mbox h4{margin:0 0 8px;text-align:center;font-size:22px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px}
+.kv dt{font-weight:800;color:var(--edge)} .kv dd{margin:0}
+.code{font-size:26px;font-weight:800;text-align:center;letter-spacing:2px;background:#fff;border:3px dashed var(--orange);
+  border-radius:12px;padding:2px;margin:6px 0 10px;color:var(--orange-d)}
+.clist{margin:8px 0 0;padding:0;list-style:none}
+.clist li{background:#fff;border-radius:10px;padding:6px 10px;margin-bottom:6px;border-left:6px solid var(--red)}
+.rules{margin:0;padding-left:22px} .rules li{margin-bottom:6px}
+.mbox .actions{margin-top:14px}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(120px);background:var(--red);color:#fff;font-weight:800;
+  border-radius:14px;padding:10px 18px;box-shadow:0 5px 0 var(--red-d);transition:transform .25s,visibility .25s;visibility:hidden;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+.loading{text-align:center;padding:30px;font-weight:800;color:var(--edge)}
+.spin{display:inline-block;width:22px;height:22px;border:4px solid #fff;border-top-color:var(--orange);border-radius:50%;
+  animation:sp 1s linear infinite;vertical-align:-5px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{text-align:center;color:#fff;font-weight:600;opacity:.9;margin-top:10px;font-size:14px}
+
+@media (max-width:640px){
+  body{padding:12px 12px 32px}
+  .grid2{grid-template-columns:1fr}
+  .pgrid{grid-template-columns:repeat(2,1fr)}
+  .panel{padding:30px 10px 12px}
+  .inner{padding:10px}
+  .notebook{padding:46px 14px 20px}
+  .weeklabel{min-width:0;flex:1}
+  .toolbar{justify-content:center}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="ribbon">Phòng máy tính</div>
+    <div class="sub" id="schoolName">Lịch sử dụng &amp; đăng ký mượn phòng</div>
+    <div class="clock">🕒 <span id="clock">--:--</span></div>
+  </header>
+
+  <div class="demo" id="demoBar" hidden>🧪 Chế độ xem thử: dữ liệu đăng ký chỉ lưu trên trình duyệt này. Khi chạy trên Google Apps Script, dữ liệu được gửi về Google Sheet.</div>
+
+  <!-- NOW -->
+  <section class="panel" aria-labelledby="nowTag">
+    <div class="tag" id="nowTag">⚡ NGAY BÂY GIỜ</div>
+    <div class="now-grid" id="nowGrid"><div class="loading"><span class="spin"></span>Đang tải…</div></div>
+    <div class="now-note" id="nowNote"></div>
+  </section>
+
+  <!-- TIMETABLE -->
+  <section class="panel" aria-labelledby="ttTag">
+    <div class="tag" id="ttTag">📅 LỊCH PHÒNG MÁY</div>
+    <div class="toolbar">
+      <div class="weeknav">
+        <button class="btn blue small" id="prevW" aria-label="Tuần trước">◀</button>
+        <div class="weeklabel" id="weekLabel">…</div>
+        <button class="btn blue small" id="nextW" aria-label="Tuần sau">▶</button>
+        <button class="btn yellow small" id="thisW">Tuần này</button>
+      </div>
+      <div class="tabs" role="tablist" id="roomTabs"></div>
+    </div>
+    <div class="inner">
+      <div class="tt-scroll"><table class="tt" id="tt"></table></div>
+      <div class="legend">
+        <span><i style="background:var(--class)"></i>Có lớp học (TKB)</span>
+        <span><i style="background:var(--book)"></i>Đã có người mượn</span>
+        <span><i style="background:#fff;border:2px solid var(--green)"></i>Trống – bấm để đăng ký</span>
+        <span><i style="background:#fff;border:2px solid var(--red)"></i>Tiết đang diễn ra</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING FORM -->
+  <section class="notebook" id="booking" aria-labelledby="nbTitle">
+    <div class="rings" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="nb-title" id="nbTitle">✍️ Đăng ký mượn phòng</div>
+    <form id="form" novalidate>
+      <div class="grid2">
+        <div>
+          <label class="f" for="name">Họ và tên người mượn <span class="req">*</span></label>
+          <input class="inp" id="name" name="name" autocomplete="name" placeholder="VD: Nguyễn Thị Lan" maxlength="80">
+          <div class="err" data-for="name"></div>
+        </div>
+        <div>
+          <label class="f" for="phone">Số điện thoại <span class="req">*</span></label>
+          <input class="inp" id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="VD: 0912 345 678" maxlength="20">
+          <div class="err" data-for="phone"></div>
+        </div>
+        <div class="full">
+          <label class="f" for="email">Email <span class="req">*</span></label>
+          <input class="inp" id="email" name="email" type="email" autocomplete="email" placeholder="VD: lan.nguyen@gmail.com" maxlength="120">
+          <div class="hint">Email xác nhận kèm mã đăng ký sẽ được gửi về địa chỉ này.</div>
+          <div class="err" data-for="email"></div>
+        </div>
+        <div>
+          <span class="f" style="display:block;font-weight:800;margin-bottom:4px">Phòng muốn mượn <span class="req">*</span></span>
+          <div class="roompick" id="roomPick"></div>
+          <div class="err" data-for="room"></div>
+        </div>
+        <div>
+          <label class="f" for="date">Ngày mượn <span class="req">*</span></label>
+          <input class="inp" id="date" name="date" type="date">
+          <div class="hint" id="dateHint">Từ Thứ 2 đến Thứ 6.</div>
+          <div class="err" data-for="date"></div>
+        </div>
+        <div class="full">
+          <span style="display:block;font-weight:800;margin-bottom:4px">Chọn tiết muốn mượn <span class="req">*</span></span>
+          <div class="pgrid" id="pgrid"></div>
+          <div class="quick" id="quick">
+            <button type="button" class="btn blue small" data-q="am">Chọn các tiết trống buổi sáng</button>
+            <button type="button" class="btn blue small" data-q="pm">Chọn các tiết trống buổi chiều</button>
+            <button type="button" class="btn small red" data-q="none">Bỏ chọn</button>
+          </div>
+          <div class="err" data-for="periods"></div>
+        </div>
+        <div>
+          <label class="f" for="purpose">Mục đích sử dụng <span class="req">*</span></label>
+          <textarea class="inp" id="purpose" name="purpose" maxlength="500" placeholder="VD: Ôn thi Tin học cho đội tuyển lớp 5; dạy bù; tập huấn giáo viên…"></textarea>
+          <div class="err" data-for="purpose"></div>
+        </div>
+        <div>
+          <label class="f" for="students">Số người sử dụng (dự kiến)</label>
+          <input class="inp" id="students" name="students" type="number" min="1" max="60" placeholder="VD: 30">
+          <div class="hint">Mỗi phòng tối đa khoảng 35 máy.</div>
+        </div>
+        <div class="full">
+          <div class="summary" id="summary" hidden></div>
+        </div>
+        <div class="full">
+          <div class="commit">
+            <input type="checkbox" id="agree">
+            <label for="agree">Tôi cam kết sử dụng phòng máy <u>đúng mục đích</u>, <u>đúng thời gian</u> đã đăng ký và
+              <u>tuân thủ nội quy phòng máy</u>. Tôi chịu trách nhiệm về thiết bị trong thời gian mượn.
+              <button type="button" class="linkbtn" id="openRules">Xem nội quy</button></label>
+          </div>
+          <div class="err" data-for="agree"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn red" id="resetBtn">Làm lại</button>
+        <button type="submit" class="btn green" id="submitBtn">Gửi đăng ký ▶</button>
+      </div>
+    </form>
+  </section>
+
+  <footer>Phòng máy 1 (117T) · Phòng máy 2 (119T) · Mọi thắc mắc vui lòng liên hệ người quản lý phòng máy.</footer>
+</div>
+
+<!-- Result modal -->
+<div class="modal" id="resModal" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+  <div class="mbox" id="resBox">
+    <div class="ribbon" id="resTitle">Thành công</div>
+    <div class="stars" id="resStars">★★★</div>
+    <div class="inner" id="resBody"></div>
+    <div class="actions"><button class="btn yellow" data-close>Đóng</button></div>
+  </div>
+</div>
+
+<!-- Rules modal -->
+<div class="modal" id="rulesModal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div class="mbox">
+    <div class="ribbon" id="rulesTitle">Nội quy phòng máy</div>
+    <div class="inner">
+      <ol class="rules">
+        <li>Có mặt đúng giờ, sử dụng phòng đúng tiết và đúng mục đích đã đăng ký.</li>
+        <li>Không mang đồ ăn, nước uống vào phòng máy.</li>
+        <li>Không tự ý tháo lắp, di chuyển thiết bị, cài đặt hoặc gỡ bỏ phần mềm.</li>
+        <li>Không truy cập trang web, nội dung không lành mạnh; không chơi game khi chưa được phép.</li>
+        <li>Giáo viên/người mượn chịu trách nhiệm quản lý học sinh trong suốt thời gian sử dụng.</li>
+        <li>Phát hiện máy hỏng, sự cố phải báo ngay cho người quản lý phòng máy.</li>
+        <li>Hết giờ: tắt máy đúng cách, xếp ghế ngay ngắn, tắt điện, quạt/điều hòa, đóng cửa sổ.</li>
+        <li>Nếu không sử dụng nữa, vui lòng báo hủy để người khác có thể đăng ký.</li>
+      </ol>
+    </div>
+    <div class="actions"><button class="btn green" id="agreeRules">Tôi đã đọc &amp; đồng ý</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =================== DỮ LIỆU XEM THỬ (chỉ dùng khi mở file ngoài Apps Script) =================== */
+const DEMO_DATA = (function(){
+  const rows = [
+    [1,'08:00','08:35','','','','','','','','','3A2–THOC1','4A6–CODI'],
+    [2,'08:40','09:15','5A2–THOC1','3A6–THOC1','','4A1–THOC1','3A3–THOC1','','5A6–CODI','','3A2–CNGH1','4A4–THOC1'],
+    [3,'09:20','09:55','5A2–CNGH1','3A6–CNGH1','','4A1–CNGH1','3A3–CNGH1','','5A5–CODI','','','4A4–CNGH1'],
+    [4,'10:10','10:45','5A3–THOC1','4A2–THOC1','5A6–THOC1','3A4–THOC1','3A1–THOC1','5A1–THOC1','','4A2–CODI','','4A3–THOC1'],
+    [5,'10:50','11:25','5A3–CNGH1','4A2–CNGH1','5A6–CNGH1','3A4–CNGH1','3A1–CNGH1','5A1–CNGH1','','4A1–CODI','','4A3–CNGH1'],
+    [6,'13:35','14:10','5A4–THOC1','3A5–THOC1','5A5–THOC1','4A5–CODI','','4A6–THOC1','5A2–CODI','','','4A5–THOC1'],
+    [7,'14:15','14:50','5A4–CNGH1','3A5–CNGH1','5A5–CNGH1','4A3–CODI','','4A6–CNGH1','5A3–CODI','','','4A5–CNGH1'],
+    [8,'15:10','15:45','','5A1–CODI','','4A4–CODI','','','5A4–CODI','','','']
+  ];
+  const rooms=[{id:'117T',name:'Phòng máy 1',short:'P.117T'},{id:'119T',name:'Phòng máy 2',short:'P.119T'}];
+  const tt={}; rooms.forEach(r=>tt[r.id]=[[],[],[],[],[]]);
+  rows.forEach(r=>{ for(let d=0;d<5;d++) rooms.forEach((rm,ri)=>tt[rm.id][d][r[0]-1]=r[3+d*2+ri]); });
+  return { config:{school:'Trường Tiểu học (xem thử)',maxDaysAhead:60}, rooms,
+    subjects:{THOC1:'Tin học',CNGH1:'Công nghệ',CODI:'Coding'}, days:['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6'],
+    periods:rows.map(r=>({p:r[0],start:r[1],end:r[2]})), timetable:tt, bookings:[] };
+})();
+
+/* =================== API: Apps Script hoặc chế độ xem thử =================== */
+/* Link Web app Apps Script (đuôi /exec). Dùng khi trang được mở từ GitHub Pages hoặc nơi khác.
+   Để trống '' thì chạy chế độ xem thử. */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1bAUM_smCnZ4wpIr---y_gcozZdxSdZzeZou7js8eBXGEMMx4PX7m84w3zeX31DX5/exec';
+const HAS_GAS = typeof google!=='undefined' && google.script && google.script.run;
+const HAS_URL = !HAS_GAS && /^https:\/\/script\.google\.com\/.+\/exec$/.test(SCRIPT_URL);
+const API = {
+  async fetchJSON(url,opt){
+    const r=await fetch(url,opt); if(!r.ok) throw new Error('Máy chủ trả lỗi '+r.status);
+    const t=await r.text(); try{return JSON.parse(t)}catch(e){throw new Error('Không đọc được dữ liệu. Kiểm tra quyền truy cập Web app là "Anyone".')}
+  },
+  call(fn,arg){
+    return new Promise((res,rej)=>{
+      const r=google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+      arg===undefined ? r[fn]() : r[fn](arg);
+    });
+  },
+  load(){
+    if(HAS_GAS) return this.call('getData');
+    if(HAS_URL) return this.fetchJSON(SCRIPT_URL+'?action=data&t='+Date.now());
+    return Promise.resolve(Object.assign({},DEMO_DATA,{bookings:Demo.read()}));
+  },
+  submit(f){
+    if(HAS_GAS) return this.call('submitBooking',f);
+    // text/plain để tránh yêu cầu CORS preflight mà Apps Script không hỗ trợ
+    if(HAS_URL) return this.fetchJSON(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(f)});
+    return Demo.submit(f);
+  }
+};
+const Demo = {
+  read(){ try{return JSON.parse(localStorage.getItem('pm_demo_bookings')||'[]')}catch(e){return[]} },
+  write(a){ try{localStorage.setItem('pm_demo_bookings',JSON.stringify(a))}catch(e){} },
+  submit(f){
+    return new Promise(res=>setTimeout(()=>{
+      const list=this.read();
+      const err=validateForm(f); if(err.msg) return res({ok:false,type:'invalid',message:err.msg});
+      const conf=findConflicts(f.room,f.date,f.periods,list);
+      if(conf.length) return res({ok:false,type:'conflict',message:'Thời gian bạn chọn đã có người sử dụng phòng.',conflicts:conf});
+      const code='PM'+f.date.slice(2).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+      const b={code,name:f.name,room:f.room,date:f.date,periods:f.periods,purpose:f.purpose,status:'Đã đăng ký'};
+      list.push(b); this.write(list);
+      res({ok:true,booking:Object.assign({},b,{roomLabel:roomLabel(f.room),dayName:DATA.days[dayIdx(f.date)],
+        timeRange:periodRange(f.periods),emailSent:false})});
+    },500));
+  }
+};
+
+/* =================== TIỆN ÍCH NGÀY GIỜ (giờ Việt Nam) =================== */
+const TZ='Asia/Ho_Chi_Minh';
+function vnNow(){
+  const o={}; new Intl.DateTimeFormat('en-GB',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit',
+    hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(x=>o[x.type]=x.value);
+  return {date:`${o.year}-${o.month}-${o.day}`, min:(+o.hour)*60+(+o.minute), hm:`${o.hour}:${o.minute}`};
+}
+const toMin=t=>{const p=t.split(':').map(Number);return p[0]*60+(p[1]||0)};
+function addDays(s,n){const p=s.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]+n)).toISOString().slice(0,10)}
+function dayIdx(s){const p=s.split('-').map(Number);const w=new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay();return w>=1&&w<=5?w-1:-1}
+function mondayOf(s){const p=s.split('-').map(Number);const w=new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay();return addDays(s,-((w+6)%7))}
+const fmtVN=s=>s.split('-').reverse().join('/');
+const fmtShort=s=>{const p=s.split('-');return p[2]+'/'+p[1]};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+
+/* =================== TRẠNG THÁI =================== */
+let DATA=null, NOW=vnNow(), WEEK=null, VIEW_ROOM=null;
+const form={room:'',date:'',periods:[]};
+
+const roomLabel=id=>{const r=DATA.rooms.find(x=>x.id===id);return r?`${r.name} (${r.id})`:id};
+const period=p=>DATA.periods.find(x=>x.p===p);
+const periodRange=list=>list.map(p=>{const x=period(p);return x.start+'–'+x.end}).join(', ');
+function classInfo(c){const [cls,sub]=c.split(/[–-]/);return {cls:cls.trim(),sub:sub?(DATA.subjects[sub.trim()]||sub.trim()):''}}
+function slot(room,date,p){
+  const d=dayIdx(date); if(d<0) return {type:'off'};
+  const c=(DATA.timetable[room][d]||[])[p-1];
+  if(c) return {type:'class',label:c,info:classInfo(c)};
+  const b=DATA.bookings.find(b=>b.room===room&&b.date===date&&b.periods.includes(p));
+  if(b) return {type:'book',booking:b};
+  return {type:'free'};
+}
+function isPast(date,p){return date<NOW.date||(date===NOW.date&&toMin(period(p).end)<=NOW.min)}
+function findConflicts(room,date,periods,bookings){
+  const out=[], d=dayIdx(date);
+  periods.forEach(p=>{
+    const per=period(p), time=per.start+'–'+per.end, c=d>=0?(DATA.timetable[room][d]||[])[p-1]:'';
+    if(c){const i=classInfo(c);out.push({period:p,time,type:'class',label:`Lớp ${i.cls} – ${i.sub}`})}
+    (bookings||DATA.bookings).forEach(b=>{ if(b.room===room&&b.date===date&&b.periods.includes(p))
+      out.push({period:p,time,type:'booking',label:'Đã được mượn bởi '+b.name}) });
+  });
+  return out;
+}
+
+/* =================== NGAY BÂY GIỜ =================== */
+function renderNow(){
+  $('clock').textContent=`${DATA.days[dayIdx(NOW.date)]||(new Date().getDay()===6?'Thứ 7':'Chủ nhật')}, ${fmtVN(NOW.date)} · ${NOW.hm}`;
+  const d=dayIdx(NOW.date);
+  const cur=DATA.periods.find(p=>toMin(p.start)<=NOW.min&&NOW.min<toMin(p.end));
+  const next=DATA.periods.find(p=>toMin(p.start)>NOW.min);
+  let note='';
+  if(d<0) note='Hôm nay là ngày nghỉ – phòng máy không hoạt động.';
+  else if(cur) note=`Đang trong tiết ${cur.p} (${cur.start}–${cur.end}).`;
+  else if(next) note=`Hiện đang giờ nghỉ. Tiết tiếp theo: tiết ${next.p} lúc ${next.start}.`;
+  else note='Đã hết giờ học hôm nay.';
+  $('nowNote').textContent=note;
+
+  $('nowGrid').innerHTML=DATA.rooms.map(r=>{
+    let st='off',badge='NGOÀI GIỜ',detail='Phòng không có tiết nào lúc này.';
+    if(d>=0&&cur){
+      const s=slot(r.id,NOW.date,cur.p);
+      if(s.type==='class'){st='class';badge='ĐANG DẠY';detail=`Lớp <b>${esc(s.info.cls)}</b> – ${esc(s.info.sub)}`}
+      else if(s.type==='book'){st='book';badge='ĐANG ĐƯỢC MƯỢN';detail=`<b>${esc(s.booking.name)}</b> – ${esc(s.booking.purpose||'')}`}
+      else {st='free';badge='ĐANG TRỐNG';detail='Có thể đăng ký sử dụng tiết này.'}
+    }
+    let nxt='';
+    if(d>=0){
+      const up=DATA.periods.filter(p=>toMin(p.start)>NOW.min).map(p=>({p,s:slot(r.id,NOW.date,p.p)})).find(x=>x.s.type!=='free');
+      if(up) nxt=`<div class="detail">Tiếp theo: tiết ${up.p.p} (${up.p.start}) – ${up.s.type==='class'?'Lớp '+esc(up.s.info.cls):'Mượn: '+esc(up.s.booking.name)}</div>`;
+      else nxt='<div class="detail">Không còn lịch nào trong hôm nay.</div>';
+    }
+    return `<div class="room-card st-${st}"><div class="monitor">${r.id.slice(0,3)}</div><div>
+      <h3>${esc(r.name)} · ${esc(r.id)}</h3><span class="badge">${badge}</span>
+      <div class="detail">${detail}</div>${nxt}</div></div>`;
+  }).join('');
+}
+
+/* =================== LỊCH TUẦN =================== */
+function renderTabs(){
+  $('roomTabs').innerHTML=DATA.rooms.map(r=>`<button class="tab ${r.id===VIEW_ROOM?'on':''}" role="tab" aria-selected="${r.id===VIEW_ROOM}" data-room="${r.id}">${esc(r.name)} · ${esc(r.id)}</button>`).join('');
+}
+function renderGrid(){
+  const dates=[0,1,2,3,4].map(i=>addDays(WEEK,i));
+  $('weekLabel').textContent=`Tuần ${fmtShort(dates[0])} – ${fmtVN(dates[4])}`;
+  const cur=DATA.periods.find(p=>toMin(p.start)<=NOW.min&&NOW.min<toMin(p.end));
+  let h='<thead><tr><th class="ph">Tiết</th>'+dates.map((dt,i)=>`<th class="${dt===NOW.date?'today':''}">${DATA.days[i]}<small>${fmtShort(dt)}</small></th>`).join('')+'</tr></thead><tbody>';
+  DATA.periods.forEach((p,idx)=>{
+    if(idx>0&&toMin(p.start)-toMin(DATA.periods[idx-1].end)>60) h+='<tr class="break"><td colspan="6">— Nghỉ trưa —</td></tr>';
+    h+=`<tr><td class="pcell">Tiết ${p.p}<small>${p.start}–${p.end}</small></td>`;
+    dates.forEach(dt=>{
+      const s=slot(VIEW_ROOM,dt,p.p), past=isPast(dt,p.p), isCur=cur&&cur.p===p.p&&dt===NOW.date;
+      const cls=[s.type, past?'past':'', isCur?'cur':''].join(' ');
+      if(s.type==='class') h+=`<td class="${cls}" title="Lớp ${esc(s.info.cls)} – ${esc(s.info.sub)}"><span class="c1">${esc(s.info.cls)}</span><span class="c2">${esc(s.info.sub)}</span></td>`;
+      else if(s.type==='book') h+=`<td class="${cls}" title="${esc(s.booking.name)}: ${esc(s.booking.purpose)}"><span class="c1">Đã mượn</span><span class="c2">${esc(s.booking.name)}</span></td>`;
+      else if(past) h+=`<td class="${cls}">–</td>`;
+      else h+=`<td class="${cls}" tabindex="0" role="button" data-date="${dt}" data-p="${p.p}" aria-label="Đăng ký tiết ${p.p} ngày ${fmtVN(dt)}"><span class="plus">＋ Mượn</span></td>`;
+    });
+    h+='</tr>';
+  });
+  $('tt').innerHTML=h+'</tbody>';
+}
+
+/* =================== FORM =================== */
+function renderRoomPick(){
+  $('roomPick').innerHTML=DATA.rooms.map(r=>`<label><input type="radio" name="room" value="${r.id}" ${form.room===r.id?'checked':''}><span class="rp">${esc(r.name)}<br><small>${esc(r.id)}</small></span></label>`).join('');
+}
+function renderPeriods(){
+  const g=$('pgrid');
+  if(!form.room||!form.date){g.innerHTML='<div class="hint" style="grid-column:1/-1">Hãy chọn phòng và ngày trước để xem các tiết còn trống.</div>';renderSummary();return}
+  if(dayIdx(form.date)<0){g.innerHTML='<div class="err" style="grid-column:1/-1">Ngày bạn chọn là Thứ 7/Chủ nhật – phòng máy không cho mượn.</div>';form.periods=[];renderSummary();return}
+  g.innerHTML=DATA.periods.map(p=>{
+    const s=slot(form.room,form.date,p.p), past=isPast(form.date,p.p);
+    let cls='pchip', who='Trống';
+    if(past){cls+=' past';who='Đã qua'}
+    else if(s.type==='class'){cls+=' busy';who='Lớp '+s.info.cls}
+    else if(s.type==='book'){cls+=' busy';who='Đã mượn'}
+    if(form.periods.includes(p.p)) cls+=' sel';
+    return `<div class="${cls}" role="checkbox" tabindex="0" aria-checked="${form.periods.includes(p.p)}" data-p="${p.p}">Tiết ${p.p}<small>${p.start}–${p.end}</small><span class="who">${esc(who)}</span></div>`;
+  }).join('');
+  renderSummary();
+}
+function renderSummary(){
+  const el=$('summary');
+  if(!form.room||!form.date||!form.periods.length){el.hidden=true;return}
+  el.hidden=false;
+  el.innerHTML=`📌 Bạn đang đăng ký: <b>${esc(roomLabel(form.room))}</b> · <b>${DATA.days[dayIdx(form.date)]}, ${fmtVN(form.date)}</b> · Tiết <b>${form.periods.join(', ')}</b> (${periodRange(form.periods)})`;
+}
+function togglePeriod(p){
+  const s=slot(form.room,form.date,p);
+  if(isPast(form.date,p)) return toast(`Tiết ${p} đã qua, không thể đăng ký.`);
+  if(s.type==='class') return toast(`⚠️ Trùng lịch! Tiết ${p} đang có lớp ${s.info.cls} – ${s.info.sub}.`);
+  if(s.type==='book') return toast(`⚠️ Trùng lịch! Tiết ${p} đã được ${s.booking.name} mượn.`);
+  form.periods=form.periods.includes(p)?form.periods.filter(x=>x!==p):[...form.periods,p].sort((a,b)=>a-b);
+  setErr('periods','');
+  renderPeriods();
+}
+
+function validateForm(f){
+  const e={};
+  if(!f.name||f.name.trim().length<2) e.name='Vui lòng nhập họ và tên.';
+  if(!/^(0|\+84)\d{9,10}$/.test((f.phone||'').replace(/[\s.\-]/g,''))) e.phone='Số điện thoại chưa đúng (VD: 0912345678).';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email||'')) e.email='Email chưa đúng định dạng.';
+  if(!f.room) e.room='Vui lòng chọn phòng.';
+  if(!f.date) e.date='Vui lòng chọn ngày.';
+  else if(dayIdx(f.date)<0) e.date='Chỉ mượn từ Thứ 2 đến Thứ 6.';
+  else if(f.date<NOW.date) e.date='Ngày này đã qua.';
+  else if(f.date>addDays(NOW.date,DATA.config.maxDaysAhead)) e.date=`Chỉ được đăng ký trước tối đa ${DATA.config.maxDaysAhead} ngày.`;
+  if(!f.periods||!f.periods.length) e.periods='Vui lòng chọn ít nhất 1 tiết.';
+  if(!f.purpose||f.purpose.trim().length<3) e.purpose='Vui lòng ghi mục đích sử dụng.';
+  if(!f.agree) e.agree='Bạn cần tích vào ô cam kết.';
+  const keys=Object.keys(e); e.msg=keys.length?e[keys[0]]:'';
+  return e;
+}
+function setErr(k,msg){
+  const el=document.querySelector(`.err[data-for="${k}"]`); if(el) el.textContent=msg||'';
+  const inp=$(k); if(inp&&inp.classList.contains('inp')) inp.classList.toggle('bad',!!msg);
+}
+function collect(){
+  return {name:$('name').value.trim(),email:$('email').value.trim(),phone:$('phone').value.trim(),
+    room:form.room,date:form.date,periods:form.periods.slice(),purpose:$('purpose').value.trim(),
+    students:$('students').value.trim(),agree:$('agree').checked};
+}
+
+async function onSubmit(ev){
+  ev.preventDefault();
+  NOW=vnNow();
+  const f=collect(), e=validateForm(f);
+  ['name','phone','email','room','date','periods','purpose','agree'].forEach(k=>setErr(k,e[k]));
+  if(e.msg){toast(e.msg);const first=document.querySelector('.err:not(:empty)');first&&first.parentElement.scrollIntoView({behavior:'smooth',block:'center'});return}
+  // kiểm tra trùng ngay trên trình duyệt
+  const conf=findConflicts(f.room,f.date,f.periods);
+  if(conf.length) return showConflict({message:'Thời gian bạn chọn đã có người sử dụng phòng.',conflicts:conf});
+  const btn=$('submitBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>Đang gửi…';
+  try{
+    const r=await API.submit(f);
+    if(r.ok){showSuccess(r.booking); resetForm(true)}
+    else if(r.type==='conflict') showConflict(r);
+    else showError(r.message);
+    await reload();
+  }catch(err){showError('Không gửi được: '+(err&&err.message||err))}
+  finally{btn.disabled=false;btn.innerHTML='Gửi đăng ký ▶'}
+}
+
+/* =================== MODAL & TOAST =================== */
+function openModal(id){$(id).classList.add('show');const b=$(id).querySelector('button');b&&b.focus()}
+function closeModal(el){el.classList.remove('show')}
+function showSuccess(b){
+  $('resBox').className='mbox'; $('resTitle').textContent='Đăng ký thành công'; $('resStars').textContent='★★★';
+  $('resBody').innerHTML=`<h4>Mã đăng ký của bạn</h4><div class="code">${esc(b.code)}</div>
+    <dl class="kv"><dt>Người mượn</dt><dd>${esc(b.name)}</dd><dt>Phòng</dt><dd>${esc(b.roomLabel)}</dd>
+    <dt>Ngày</dt><dd>${esc(b.dayName)}, ${fmtVN(b.date)}</dd><dt>Tiết</dt><dd>${b.periods.join(', ')} (${esc(b.timeRange)})</dd>
+    <dt>Mục đích</dt><dd>${esc(b.purpose)}</dd></dl>
+    <p style="margin:10px 0 0;font-weight:700">${b.emailSent?'📧 Email xác nhận đã được gửi tới '+esc(b.email)+'.':'Vui lòng ghi lại mã đăng ký để đối chiếu khi cần.'}</p>`;
+  openModal('resModal');
+}
+function showConflict(r){
+  $('resBox').className='mbox lose'; $('resTitle').textContent='Trùng lịch!'; $('resStars').textContent='✖';
+  $('resBody').innerHTML=`<h4>Không thể đăng ký</h4><p style="margin:0">${esc(r.message)} Các tiết bị trùng:</p>
+    <ul class="clist">${(r.conflicts||[]).map(c=>`<li><b>Tiết ${c.period}</b> (${esc(c.time)}): ${esc(c.label)}</li>`).join('')}</ul>
+    <p style="margin:8px 0 0">Vui lòng chọn tiết khác, ngày khác hoặc phòng còn lại.</p>`;
+  openModal('resModal');
+}
+function showError(msg){
+  $('resBox').className='mbox lose'; $('resTitle').textContent='Chưa gửi được'; $('resStars').textContent='!';
+  $('resBody').innerHTML=`<p style="margin:0;text-align:center;font-weight:700">${esc(msg)}</p>`;
+  openModal('resModal');
+}
+let tTimer;
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tTimer);tTimer=setTimeout(()=>t.classList.remove('show'),3200)}
+
+/* =================== KHỞI ĐỘNG =================== */
+function resetForm(keepContact){
+  const keep=keepContact?{name:$('name').value,email:$('email').value,phone:$('phone').value}:null;
+  $('form').reset();
+  if(keep){$('name').value=keep.name;$('email').value=keep.email;$('phone').value=keep.phone}
+  form.periods=[]; if(!keepContact){form.room='';form.date=''} else $('date').value=form.date;
+  document.querySelectorAll('.err').forEach(e=>e.textContent='');document.querySelectorAll('.inp.bad').forEach(e=>e.classList.remove('bad'));
+  renderRoomPick(); renderPeriods();
+}
+async function reload(){
+  try{ DATA=await API.load(); }catch(e){ toast('Không tải được dữ liệu, thử lại sau.'); return }
+  renderAll();
+}
+function renderAll(){ renderNow(); renderTabs(); renderGrid(); renderRoomPick(); renderPeriods(); }
+
+function prefill(room,date,p){
+  form.room=room; form.date=date; $('date').value=date;
+  if(!form.periods.includes(p)) form.periods=[...form.periods,p].sort((a,b)=>a-b);
+  renderRoomPick(); renderPeriods();
+  $('booking').scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>$('name').value?null:$('name').focus({preventScroll:true}),500);
+}
+
+function bind(){
+  $('prevW').onclick=()=>{WEEK=addDays(WEEK,-7);renderGrid()};
+  $('nextW').onclick=()=>{WEEK=addDays(WEEK,7);renderGrid()};
+  $('thisW').onclick=()=>{WEEK=mondayOf(dayIdx(NOW.date)<0?addDays(NOW.date,2):NOW.date);renderGrid()};
+  $('roomTabs').onclick=e=>{const b=e.target.closest('[data-room]');if(b){VIEW_ROOM=b.dataset.room;renderTabs();renderGrid()}};
+  const ttAct=e=>{const td=e.target.closest('td[data-date]');if(td)prefill(VIEW_ROOM,td.dataset.date,+td.dataset.p)};
+  $('tt').onclick=ttAct;
+  $('tt').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ttAct(e)}};
+  $('roomPick').onchange=e=>{form.room=e.target.value;form.periods=[];setErr('room','');renderPeriods()};
+  $('date').onchange=e=>{form.date=e.target.value;form.periods=[];setErr('date','');renderPeriods();
+    if(form.date&&dayIdx(form.date)>=0){WEEK=mondayOf(form.date);renderGrid()}};
+  const pAct=e=>{const c=e.target.closest('.pchip');if(c)togglePeriod(+c.dataset.p)};
+  $('pgrid').onclick=pAct;
+  $('pgrid').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pAct(e)}};
+  $('quick').onclick=e=>{
+    const q=e.target.closest('[data-q]'); if(!q) return;
+    if(q.dataset.q==='none'){form.periods=[];return renderPeriods()}
+    if(!form.room||!form.date||dayIdx(form.date)<0) return toast('Hãy chọn phòng và ngày (Thứ 2–Thứ 6) trước.');
+    const am=q.dataset.q==='am';
+    const ok=DATA.periods.filter(p=>(am?toMin(p.start)<12*60:toMin(p.start)>=12*60)&&slot(form.room,form.date,p.p).type==='free'&&!isPast(form.date,p.p)).map(p=>p.p);
+    if(!ok.length) return toast(`Buổi ${am?'sáng':'chiều'} không còn tiết trống.`);
+    form.periods=[...new Set([...form.periods,...ok])].sort((a,b)=>a-b); renderPeriods();
+  };
+  ['name','phone','email','purpose'].forEach(k=>$(k).addEventListener('input',()=>setErr(k,'')));
+  $('agree').onchange=()=>setErr('agree','');
+  $('form').onsubmit=onSubmit;
+  $('resetBtn').onclick=()=>resetForm(false);
+  $('openRules').onclick=()=>openModal('rulesModal');
+  $('agreeRules').onclick=()=>{$('agree').checked=true;setErr('agree','');closeModal($('rulesModal'))};
+  document.querySelectorAll('.modal').forEach(m=>{
+    m.addEventListener('click',e=>{if(e.target===m||e.target.hasAttribute('data-close'))closeModal(m)});
+  });
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(closeModal)});
+}
+
+(async function init(){
+  if(!HAS_GAS&&!HAS_URL) $('demoBar').hidden=false;
+  bind();
+  try{ DATA=await API.load(); }catch(e){ $('nowGrid').innerHTML='<div class="loading">Không tải được dữ liệu. Vui lòng tải lại trang.</div>'; return }
+  $('schoolName').textContent=(DATA.config.school||'')+' · Lịch sử dụng & đăng ký mượn phòng';
+  NOW=vnNow();
+  VIEW_ROOM=DATA.rooms[0].id;
+  WEEK=mondayOf(dayIdx(NOW.date)<0?addDays(NOW.date,2):NOW.date);
+  $('date').min=NOW.date; $('date').max=addDays(NOW.date,DATA.config.maxDaysAhead);
+  renderAll();
+  setInterval(()=>{const before=NOW.min;NOW=vnNow();if(NOW.min!==before){renderNow();renderGrid();renderPeriods()}},20000);
+  setInterval(reload,5*60*1000);
+})();
+</script>
+</body>
+</html>
