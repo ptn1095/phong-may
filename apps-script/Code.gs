@@ -11,7 +11,7 @@
 
 // =================== CẤU HÌNH – thầy/cô sửa ở đây ===================
 const CONFIG = {
-  SCHOOL_NAME: 'Trường Tiểu học',          // Tên trường hiển thị trên web
+  SCHOOL_NAME: 'Trường Tiểu học và THCS FPT Cầu Giấy', // Tên trường hiển thị trên web
   ADMIN_EMAIL: '',                         // Email nhận thông báo mỗi khi có người đăng ký ('' = không gửi)
   SEND_CONFIRM_EMAIL: true,                // Gửi email xác nhận cho người mượn
   MAX_DAYS_AHEAD: 60,                      // Chỉ cho đăng ký trước tối đa bao nhiêu ngày
@@ -41,6 +41,13 @@ const DEFAULT_TKB = [
   [6, '13:35', '14:10', '5A4–THOC1', '3A5–THOC1', '5A5–THOC1', '4A5–CODI', '', '4A6–THOC1', '5A2–CODI', '', '', '4A5–THOC1'],
   [7, '14:15', '14:50', '5A4–CNGH1', '3A5–CNGH1', '5A5–CNGH1', '4A3–CODI', '', '4A6–CNGH1', '5A3–CODI', '', '', '4A5–CNGH1'],
   [8, '15:10', '15:45', '', '5A1–CODI', '', '4A4–CODI', '', '', '5A4–CODI', '', '', '']
+];
+
+// Khung NGOÀI GIỜ HỌC: giáo viên được mượn và tự ghi giờ cụ thể (VD 16:00–17:00).
+// Ô trong khung này có thể ghi hoạt động cố định, VD "CLB" (chiếm cả khung) hoặc "CLB Robotics 16:00–17:00".
+const DEFAULT_WINDOWS = [
+  ['Nghỉ trưa', '11:25', '13:35', '', '', '', '', '', '', '', '', '', ''],
+  ['Cuối giờ học', '15:45', '17:30', '', '', '', '', 'CLB', '', 'CLB', 'CLB', '', '']
 ];
 
 const BOOKING_HEADERS = ['Thời điểm gửi', 'Mã ĐK', 'Họ và tên', 'Email', 'Số điện thoại', 'Phòng',
@@ -80,11 +87,12 @@ function getData() {
   const from = addDays_(todayStr_(), -14);
   const bookings = readBookings_(ss)
     .filter(b => !isCancelled_(b.status) && b.date >= from)
-    .map(b => ({ code: b.code, name: b.name, room: b.room, date: b.date, periods: b.periods, purpose: b.purpose, status: b.status }));
+    .map(b => ({ code: b.code, name: b.name, room: b.room, date: b.date, periods: b.periods,
+      win: b.win, start: b.start, end: b.end, purpose: b.purpose, status: b.status }));
   return {
     config: { school: CONFIG.SCHOOL_NAME, maxDaysAhead: CONFIG.MAX_DAYS_AHEAD },
     rooms: ROOMS, subjects: SUBJECTS, days: DAYS,
-    periods: tkb.periods, timetable: tkb.timetable, bookings: bookings
+    periods: tkb.periods, timetable: tkb.timetable, windows: tkb.windows, winTT: tkb.winTT, bookings: bookings
   };
 }
 
@@ -97,8 +105,10 @@ function submitBooking(f) {
     date: clean_(f.date, 10), purpose: clean_(f.purpose, 500),
     students: clean_(f.students, 5), agree: f.agree === true,
     periods: (Array.isArray(f.periods) ? f.periods : []).map(Number)
-      .filter(p => p >= 1 && p <= 20).filter((p, i, a) => a.indexOf(p) === i).sort((a, b) => a - b)
+      .filter(p => p >= 1 && p <= 20).filter((p, i, a) => a.indexOf(p) === i).sort((a, b) => a - b),
+    win: clean_(f.win, 40), start: normTime_(clean_(f.start, 5)), end: normTime_(clean_(f.end, 5))
   };
+  if (data.win) data.periods = []; else { data.start = ''; data.end = ''; }
 
   const err = validate_(data);
   if (err) return { ok: false, type: 'invalid', message: err };
@@ -112,26 +122,28 @@ function submitBooking(f) {
     const ss = getSS_();
     ensureSetup_(ss);
     const tkb = readTkb_(ss);
-    const err2 = validatePeriods_(data, tkb);
+    const err2 = validateTime_(data, tkb);
     if (err2) return { ok: false, type: 'invalid', message: err2 };
 
-    const conflicts = findConflicts_(tkb, readBookings_(ss), data.room, data.date, data.periods);
+    const conflicts = findConflicts_(tkb, readBookings_(ss), data);
     if (conflicts.length) {
       return { ok: false, type: 'conflict', message: 'Thời gian bạn chọn đã có người sử dụng phòng.', conflicts: conflicts };
     }
 
     const code = 'PM' + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyMMdd') + '-' + randomCode_(4);
-    const timeRange = periodRange_(tkb.periods, data.periods);
+    const timeRange = data.win ? data.start + '–' + data.end : periodRange_(tkb.periods, data.periods);
+    const timeLabel = data.win ? data.win + ': ' + timeRange : 'Tiết ' + data.periods.join(', ') + ' (' + timeRange + ')';
     const dayName = DAYS[dayIdx_(data.date)];
     const sh = ss.getSheetByName(CONFIG.SHEET_BOOKINGS);
     sh.appendRow([
       Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm:ss'), code, data.name, data.email,
-      data.phone, roomLabel_(data.room), data.date, dayName, data.periods.join(','), timeRange,
+      data.phone, roomLabel_(data.room), data.date, dayName, data.win || data.periods.join(','), timeRange,
       data.purpose, data.students, 'Đã cam kết', STATUS.NEW, ''
     ].map(noFormula_));
     SpreadsheetApp.flush();
     booking = { code: code, name: data.name, email: data.email, room: data.room, roomLabel: roomLabel_(data.room),
-      date: data.date, dayName: dayName, periods: data.periods, timeRange: timeRange, purpose: data.purpose };
+      date: data.date, dayName: dayName, periods: data.periods, win: data.win, start: data.start, end: data.end,
+      timeRange: timeRange, timeLabel: timeLabel, purpose: data.purpose };
   } finally {
     lock.releaseLock();
   }
@@ -151,55 +163,96 @@ function validate_(d) {
   const today = todayStr_();
   if (d.date < today) return 'Không thể đăng ký cho ngày đã qua.';
   if (d.date > addDays_(today, CONFIG.MAX_DAYS_AHEAD)) return 'Chỉ được đăng ký trước tối đa ' + CONFIG.MAX_DAYS_AHEAD + ' ngày.';
-  if (!d.periods.length) return 'Vui lòng chọn ít nhất 1 tiết.';
+  if (!d.periods.length && !d.win) return 'Vui lòng chọn ít nhất 1 tiết hoặc một khung ngoài giờ.';
   if (d.purpose.length < 3) return 'Vui lòng ghi mục đích sử dụng.';
   if (!d.agree) return 'Bạn cần tích vào ô cam kết trước khi gửi.';
   return '';
 }
 
-function validatePeriods_(d, tkb) {
+function validateTime_(d, tkb) {
+  const nowMin = d.date === todayStr_() ? toMin_(Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'HH:mm')) : -1;
+  if (d.win) {
+    const w = tkb.windows.filter(x => x.name === d.win)[0];
+    if (!w) return 'Khung giờ không hợp lệ.';
+    if (!/^\d\d:\d\d$/.test(d.start) || !/^\d\d:\d\d$/.test(d.end)) return 'Vui lòng nhập giờ bắt đầu và giờ kết thúc.';
+    if (toMin_(d.start) >= toMin_(d.end)) return 'Giờ kết thúc phải sau giờ bắt đầu.';
+    if (toMin_(d.start) < toMin_(w.start) || toMin_(d.end) > toMin_(w.end))
+      return 'Thời gian phải nằm trong khung ' + w.name + ' (' + w.start + '–' + w.end + ').';
+    if (toMin_(d.end) <= nowMin) return 'Khung giờ này hôm nay đã qua.';
+    return '';
+  }
   const valid = tkb.periods.map(p => p.p);
   if (d.periods.some(p => valid.indexOf(p) < 0)) return 'Tiết không hợp lệ.';
-  if (d.date === todayStr_()) {
-    const nowMin = toMin_(Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'HH:mm'));
-    const past = d.periods.filter(p => toMin_(tkb.periods.filter(x => x.p === p)[0].end) <= nowMin);
-    if (past.length) return 'Tiết ' + past.join(', ') + ' hôm nay đã kết thúc.';
-  }
+  const past = d.periods.filter(p => toMin_(tkb.periods.filter(x => x.p === p)[0].end) <= nowMin);
+  if (past.length) return 'Tiết ' + past.join(', ') + ' hôm nay đã kết thúc.';
   return '';
 }
 
-function findConflicts_(tkb, bookings, room, date, periods) {
-  const out = [];
-  const d = dayIdx_(date);
-  periods.forEach(p => {
-    const per = tkb.periods.filter(x => x.p === p)[0];
-    const cls = (tkb.timetable[room] && tkb.timetable[room][d] && tkb.timetable[room][d][p - 1]) || '';
-    if (cls) out.push({ period: p, time: per.start + '–' + per.end, type: 'class', label: 'Lớp ' + classLabel_(cls) });
-    bookings.forEach(b => {
-      if (!isCancelled_(b.status) && b.room === room && b.date === date && b.periods.indexOf(p) >= 0) {
-        out.push({ period: p, time: per.start + '–' + per.end, type: 'booking', label: 'Đã được mượn bởi ' + b.name });
-      }
-    });
+/** Tất cả hoạt động đã chiếm phòng trong ngày: tiết học, CLB/hoạt động cố định, lượt mượn. */
+function occupancy_(tkb, bookings, room, date) {
+  const d = dayIdx_(date), out = [];
+  if (d < 0) return out;
+  tkb.periods.forEach(p => {
+    const c = (tkb.timetable[room][d] || [])[p.p - 1];
+    if (c) out.push({ start: p.start, end: p.end, label: 'Lớp ' + classLabel_(c) });
+  });
+  tkb.windows.forEach(w => {
+    const c = ((tkb.winTT[room] || [])[d] || {})[w.name];
+    if (c) { const a = parseAct_(c, w); out.push({ start: a.start, end: a.end, label: a.label }); }
+  });
+  bookings.forEach(b => {
+    if (isCancelled_(b.status) || b.room !== room || b.date !== date) return;
+    bookingTimes_(tkb, b).forEach(t => out.push({ start: t.start, end: t.end, label: 'lượt mượn của ' + b.name }));
   });
   return out;
+}
+
+function bookingTimes_(tkb, b) {
+  if (b.periods && b.periods.length) {
+    return b.periods.map(p => tkb.periods.filter(x => x.p === p)[0]).filter(Boolean).map(x => ({ start: x.start, end: x.end, p: x.p }));
+  }
+  return (b.start && b.end) ? [{ start: b.start, end: b.end, win: b.win }] : [];
+}
+
+function findConflicts_(tkb, bookings, d) {
+  const occ = occupancy_(tkb, bookings, d.room, d.date), out = [];
+  bookingTimes_(tkb, d).forEach(r => occ.forEach(o => {
+    if (toMin_(r.start) < toMin_(o.end) && toMin_(o.start) < toMin_(r.end)) {
+      out.push({ when: r.p ? 'Tiết ' + r.p : (r.win + ' ' + r.start + '–' + r.end), time: o.start + '–' + o.end, label: o.label });
+    }
+  }));
+  return out;
+}
+
+/** "CLB Robotics 16:00–17:00" -> {label, start, end}; không ghi giờ thì chiếm cả khung. */
+function parseAct_(cell, w) {
+  const m = String(cell).match(/(\d{1,2})[:h](\d{2})\s*[–\-]\s*(\d{1,2})[:h](\d{2})/);
+  const label = (m ? cell.replace(m[0], '') : cell).replace(/[()\s]+$/, '').trim() || 'Hoạt động';
+  return m ? { label: label, start: ('0' + m[1]).slice(-2) + ':' + m[2], end: ('0' + m[3]).slice(-2) + ':' + m[4] }
+           : { label: label, start: w.start, end: w.end };
 }
 
 // =================== ĐỌC DỮ LIỆU ===================
 function readTkb_(ss) {
   const values = ss.getSheetByName(CONFIG.SHEET_TKB).getDataRange().getDisplayValues();
-  const periods = [];
-  const timetable = {};
-  ROOMS.forEach(r => { timetable[r.id] = DAYS.map(() => []); });
+  const periods = [], windows = [];
+  const timetable = {}, winTT = {};
+  ROOMS.forEach(r => { timetable[r.id] = DAYS.map(() => []); winTT[r.id] = DAYS.map(() => ({})); });
+  const cell = (row, d, ri) => String(row[3 + d * ROOMS.length + ri] || '').trim();
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
     const p = Number(row[0]);
-    if (!p) continue;
-    periods.push({ p: p, start: normTime_(row[1]), end: normTime_(row[2]) });
-    DAYS.forEach((_, d) => ROOMS.forEach((r, ri) => {
-      timetable[r.id][d][p - 1] = String(row[3 + d * ROOMS.length + ri] || '').trim();
-    }));
+    const start = normTime_(row[1]), end = normTime_(row[2]);
+    if (p) {
+      periods.push({ p: p, start: start, end: end });
+      DAYS.forEach((_, d) => ROOMS.forEach((r, ri) => { timetable[r.id][d][p - 1] = cell(row, d, ri); }));
+    } else if (String(row[0]).trim() && /^\d\d:\d\d$/.test(start) && /^\d\d:\d\d$/.test(end)) {
+      const name = String(row[0]).trim();
+      windows.push({ name: name, start: start, end: end });
+      DAYS.forEach((_, d) => ROOMS.forEach((r, ri) => { const c = cell(row, d, ri); if (c) winTT[r.id][d][name] = c; }));
+    }
   }
-  return { periods: periods, timetable: timetable };
+  return { periods: periods, timetable: timetable, windows: windows, winTT: winTT };
 }
 
 function readBookings_(ss) {
@@ -208,9 +261,16 @@ function readBookings_(ss) {
   const v = sh.getRange(2, 1, sh.getLastRow() - 1, BOOKING_HEADERS.length).getValues();
   return v.filter(r => r[1] || r[2]).map(r => ({
     code: String(r[1]), name: String(r[2]), room: roomId_(r[5]), date: normDate_(r[6]),
-    periods: String(r[8]).split(/[,;\s]+/).map(Number).filter(Boolean),
+    periods: /^[\d,;\s]+$/.test(String(r[8])) ? String(r[8]).split(/[,;\s]+/).map(Number).filter(Boolean) : [],
+    win: /^[\d,;\s]*$/.test(String(r[8])) ? '' : String(r[8]).trim(),
+    start: timeAt_(r[9], 1), end: timeAt_(r[9], 3),
     purpose: String(r[10]), status: String(r[13])
   }));
+}
+/** Lấy giờ từ ô "16:00–17:00" (i=1: bắt đầu, i=3: kết thúc). */
+function timeAt_(v, i) {
+  const m = String(v).match(/(\d{1,2})[:h](\d{2})\s*[–\-]\s*(\d{1,2})[:h](\d{2})/);
+  return m ? ('0' + m[i]).slice(-2) + ':' + m[i + 1] : '';
 }
 
 // =================== TẠO TRANG TÍNH ===================
@@ -219,13 +279,17 @@ function ensureSetup_(ss) {
     const sh = ss.insertSheet(CONFIG.SHEET_TKB);
     const head = ['Tiết', 'Bắt đầu', 'Kết thúc'];
     DAYS.forEach(d => ROOMS.forEach(r => head.push(d + ' | ' + r.id)));
-    sh.getRange(1, 1, DEFAULT_TKB.length + 1, head.length).setNumberFormat('@');
+    const rows = DEFAULT_TKB.slice(0, 5).concat([DEFAULT_WINDOWS[0]], DEFAULT_TKB.slice(5), [DEFAULT_WINDOWS[1]]);
+    sh.getRange(1, 1, rows.length + 1, head.length).setNumberFormat('@');
     sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight('bold').setBackground('#cfe8fc').setWrap(true);
-    sh.getRange(2, 1, DEFAULT_TKB.length, head.length).setValues(DEFAULT_TKB.map(r => r.map(String)));
+    sh.getRange(2, 1, rows.length, head.length).setValues(rows.map(r => r.map(String)));
+    rows.forEach((r, i) => { if (!Number(r[0])) sh.getRange(i + 2, 1, 1, head.length).setBackground('#fff4d6'); });
     sh.setFrozenRows(1);
     sh.setFrozenColumns(3);
     sh.setColumnWidths(4, head.length - 3, 95);
-    sh.getRange(DEFAULT_TKB.length + 3, 1).setValue('Ghi chú: sửa trực tiếp tên lớp trong ô (dạng 5A2–THOC1). Xóa trống ô = phòng trống. Web cập nhật ngay.');
+    sh.getRange(rows.length + 3, 1).setValue(NOTE_TKB_);
+  } else {
+    migrateWindows_(ss.getSheetByName(CONFIG.SHEET_TKB));
   }
   if (!ss.getSheetByName(CONFIG.SHEET_BOOKINGS)) {
     const sh = ss.insertSheet(CONFIG.SHEET_BOOKINGS);
@@ -242,6 +306,28 @@ function ensureSetup_(ss) {
   }
 }
 
+const NOTE_TKB_ = 'Ghi chú: sửa trực tiếp tên lớp trong ô (dạng 5A2–THOC1). Xóa trống ô = phòng trống. ' +
+  'Dòng "Nghỉ trưa", "Cuối giờ học" là khung ngoài giờ cho mượn theo giờ; ghi "CLB" (cả khung) hoặc "CLB Robotics 16:00–17:00". Web cập nhật ngay.';
+
+/** Trang TKB tạo từ bản cũ chưa có khung ngoài giờ: tự chèn thêm "Nghỉ trưa" và "Cuối giờ học". */
+function migrateWindows_(sh) {
+  const col = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 1).getDisplayValues().map(r => String(r[0]).trim());
+  const width = 3 + DAYS.length * ROOMS.length;
+  if (col.indexOf(DEFAULT_WINDOWS[0][0]) < 0) {
+    const after = col.indexOf('5') + 1;                      // dòng của tiết 5
+    const at = after > 0 ? after : sh.getLastRow();
+    sh.insertRowAfter(at);
+    sh.getRange(at + 1, 1, 1, width).setNumberFormat('@').setValues([DEFAULT_WINDOWS[0].map(String)]).setBackground('#fff4d6');
+    col.splice(at, 0, DEFAULT_WINDOWS[0][0]);
+  }
+  if (col.indexOf(DEFAULT_WINDOWS[1][0]) < 0) {
+    const after = col.indexOf('8') + 1;                      // dòng của tiết 8
+    const at = after > 0 ? after : sh.getLastRow();
+    sh.insertRowAfter(at);
+    sh.getRange(at + 1, 1, 1, width).setNumberFormat('@').setValues([DEFAULT_WINDOWS[1].map(String)]).setBackground('#fff4d6');
+  }
+}
+
 // =================== EMAIL ===================
 function sendEmails_(b, d) {
   let sent = false;
@@ -252,7 +338,7 @@ function sendEmails_(b, d) {
     '<p>Xin chào <b>' + esc_(b.name) + '</b>, phiếu đăng ký của bạn đã được ghi nhận.</p>' +
     '<table cellpadding="6" style="border-collapse:collapse;border:1px solid #cfe8fc">' +
     row_('Mã đăng ký', b.code) + row_('Phòng', b.roomLabel) + row_('Ngày', b.dayName + ', ' + dateVN) +
-    row_('Tiết', b.periods.join(', ') + ' (' + b.timeRange + ')') + row_('Mục đích', b.purpose) + '</table>' +
+    row_('Thời gian', b.timeLabel) + row_('Mục đích', b.purpose) + '</table>' +
     '<p>Bạn đã cam kết sử dụng phòng máy đúng mục đích, đúng thời gian và tuân thủ nội quy phòng máy.</p>' +
     '<p style="color:#888">Muốn hủy lịch, vui lòng liên hệ người quản lý phòng máy và cung cấp mã đăng ký.</p></div>';
   const subject = '[Phòng máy] Xác nhận mượn ' + b.roomLabel + ' – ' + dateVN + ' – Mã ' + b.code;

@@ -21,6 +21,7 @@
   --gray:#a3acb7; --gray-d:#6f7986;
   --class:#ffe2b8; --class-ink:#8a4a00;
   --book:#e6dbfa; --book-ink:#4b2a86;
+  --club:#cdeee6; --club-ink:#0f6b57; --teal:#1fb393;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -73,11 +74,11 @@ header{text-align:center;margin:8px 0 26px}
 .monitor::after{content:"";position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:30px;height:9px;
   background:#34465f;border-radius:0 0 6px 6px}
 .st-free .monitor{background:var(--green)} .st-class .monitor{background:var(--orange)}
-.st-book .monitor{background:var(--purple)} .st-off .monitor{background:var(--gray)}
+.st-book .monitor{background:var(--purple)} .st-off .monitor{background:var(--gray)} .st-club .monitor{background:var(--teal)}
 .room-card h3{margin:0;font-size:20px;line-height:1.1}
 .room-card .badge{display:inline-block;color:#fff;font-weight:800;border-radius:9px;padding:1px 10px;margin:4px 0 2px;font-size:15px}
 .st-free .badge{background:var(--green)} .st-class .badge{background:var(--orange)}
-.st-book .badge{background:var(--purple)} .st-off .badge{background:var(--gray-d)}
+.st-book .badge{background:var(--purple)} .st-off .badge{background:var(--gray-d)} .st-club .badge{background:var(--teal)}
 .room-card .detail{font-size:15px;color:var(--muted)} .room-card .detail b{color:var(--ink)}
 .now-note{text-align:center;color:#fff;font-weight:700;margin-top:12px;text-shadow:0 1px 0 rgba(0,0,0,.2)}
 
@@ -122,7 +123,17 @@ table.tt{width:100%;min-width:640px;border-collapse:separate;border-spacing:4px;
 .tt td.past{background:#eef0f3;color:#9aa3ad;cursor:default}
 .tt td.past.class,.tt td.past.book{opacity:.55}
 .tt td.cur{border-color:var(--red);box-shadow:0 0 0 2px rgba(239,83,80,.35)}
-.tt tr.break td{height:12px;background:transparent;padding:0;font-size:12px;color:var(--edge);font-weight:800;text-align:left;padding-left:8px}
+.tt td.club{background:var(--club);color:var(--club-ink)}
+.tt td.pcell.wcell{background:#ffe8a8;color:#6b4100}
+.tt td.win{background:#fffaf0;border:2px dashed #f0c96a;vertical-align:top;padding:4px}
+.tt td.win.free{cursor:pointer}
+.tt td.win.free:hover{background:#e3f7d9;border-color:var(--green)}
+.tt td.win.past{background:#eef0f3;border-color:#d6dbe1}
+.tt td.win .plus{display:block;margin-top:2px;font-size:12.5px}
+.mini{display:block;border-radius:7px;padding:1px 5px;margin-bottom:3px;font-size:12px;font-weight:700;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini.club{background:var(--club);color:var(--club-ink)} .mini.book{background:var(--book);color:var(--book-ink)}
+.mini.class{background:var(--class);color:var(--class-ink)}
 .tt .c1{font-weight:800;font-size:15px;display:block;line-height:1.1}
 .tt .c2{font-size:12.5px;display:block;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -166,6 +177,16 @@ textarea.inp{min-height:76px;resize:vertical}
 .pchip.busy{background:#ffe9e8;border-color:#f3a6a4;color:var(--red-d);cursor:not-allowed}
 .pchip.busy small{color:#c76b69}
 .pchip.past{background:#eef0f3;border-color:#d6dbe1;color:#a3acb7;cursor:not-allowed}
+.pchip.wchip{grid-column:span 2;background:#fff8e6;border-style:dashed;border-color:#f0b84a}
+.pchip.wchip small{display:inline}
+.pchip.wchip .who{white-space:normal}
+.pchip.wchip.sel{background:var(--green);border-style:solid;border-color:var(--green-d)}
+.pchip.wchip.busy{background:#ffe9e8;border-color:#f3a6a4}
+.pchip.wchip.past{background:#eef0f3;border-color:#d6dbe1}
+.custom{margin-top:10px;background:#fff;border:3px solid var(--green);border-radius:14px;padding:10px 12px;font-weight:600}
+.custom .trow{display:flex;gap:14px;flex-wrap:wrap;margin:8px 0 4px}
+.custom .trow label{display:flex;align-items:center;gap:8px;font-weight:800}
+.custom .trow .inp{width:auto;min-width:130px}
 .quick{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .commit{display:flex;gap:12px;align-items:flex-start;background:#fff;border:3px dashed var(--orange);border-radius:16px;padding:12px}
 .commit input{width:26px;height:26px;flex:0 0 26px;accent-color:var(--green);margin-top:2px;cursor:pointer}
@@ -255,6 +276,7 @@ footer{text-align:center;color:#fff;font-weight:600;opacity:.9;margin-top:10px;f
       <div class="tt-scroll"><table class="tt" id="tt"></table></div>
       <div class="legend">
         <span><i style="background:var(--class)"></i>Có lớp học (TKB)</span>
+        <span><i style="background:var(--club)"></i>CLB / hoạt động cố định</span>
         <span><i style="background:var(--book)"></i>Đã có người mượn</span>
         <span><i style="background:#fff;border:2px solid var(--green)"></i>Trống – bấm để đăng ký</span>
         <span><i style="background:#fff;border:2px solid var(--red)"></i>Tiết đang diễn ra</span>
@@ -296,8 +318,16 @@ footer{text-align:center;color:#fff;font-weight:600;opacity:.9;margin-top:10px;f
           <div class="err" data-for="date"></div>
         </div>
         <div class="full">
-          <span style="display:block;font-weight:800;margin-bottom:4px">Chọn tiết muốn mượn <span class="req">*</span></span>
+          <span style="display:block;font-weight:800;margin-bottom:4px">Chọn tiết muốn mượn, hoặc khung ngoài giờ học <span class="req">*</span></span>
           <div class="pgrid" id="pgrid"></div>
+          <div class="custom" id="customBox" hidden>
+            <div id="customTitle"></div>
+            <div class="trow">
+              <label>Từ <input class="inp" type="time" id="tStart" step="300"></label>
+              <label>Đến <input class="inp" type="time" id="tEnd" step="300"></label>
+            </div>
+            <div class="hint" id="customBusy"></div>
+          </div>
           <div class="quick" id="quick">
             <button type="button" class="btn blue small" data-q="am">Chọn các tiết trống buổi sáng</button>
             <button type="button" class="btn blue small" data-q="pm">Chọn các tiết trống buổi chiều</button>
@@ -371,7 +401,8 @@ footer{text-align:center;color:#fff;font-weight:600;opacity:.9;margin-top:10px;f
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* =================== DỮ LIỆU XEM THỬ (chỉ dùng khi mở file ngoài Apps Script) =================== */
+/* =================== DỮ LIỆU XEM THỬ / DỰ PHÒNG (khi chưa kết nối được Apps Script) =================== */
+const DEFAULT_WINDOWS=[{name:'Nghỉ trưa',start:'11:25',end:'13:35'},{name:'Cuối giờ học',start:'15:45',end:'17:30'}];
 const DEMO_DATA = (function(){
   const rows = [
     [1,'08:00','08:35','','','','','','','','','3A2–THOC1','4A6–CODI'],
@@ -383,12 +414,15 @@ const DEMO_DATA = (function(){
     [7,'14:15','14:50','5A4–CNGH1','3A5–CNGH1','5A5–CNGH1','4A3–CODI','','4A6–CNGH1','5A3–CODI','','','4A5–CNGH1'],
     [8,'15:10','15:45','','5A1–CODI','','4A4–CODI','','','5A4–CODI','','','']
   ];
+  // Hoạt động cố định ngoài giờ: [phòng, thứ (0 = Thứ 2), khung, nội dung]
+  const acts = [['117T',2,'Cuối giờ học','CLB'],['117T',3,'Cuối giờ học','CLB'],['119T',3,'Cuối giờ học','CLB']];
   const rooms=[{id:'117T',name:'Phòng máy 1',short:'P.117T'},{id:'119T',name:'Phòng máy 2',short:'P.119T'}];
-  const tt={}; rooms.forEach(r=>tt[r.id]=[[],[],[],[],[]]);
+  const tt={}, wt={}; rooms.forEach(r=>{tt[r.id]=[[],[],[],[],[]];wt[r.id]=[{},{},{},{},{}]});
   rows.forEach(r=>{ for(let d=0;d<5;d++) rooms.forEach((rm,ri)=>tt[rm.id][d][r[0]-1]=r[3+d*2+ri]); });
+  acts.forEach(a=>wt[a[0]][a[1]][a[2]]=a[3]);
   return { config:{school:'Trường Tiểu học (xem thử)',maxDaysAhead:60}, rooms,
     subjects:{THOC1:'Tin học',CNGH1:'Công nghệ',CODI:'Coding'}, days:['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6'],
-    periods:rows.map(r=>({p:r[0],start:r[1],end:r[2]})), timetable:tt, bookings:[] };
+    periods:rows.map(r=>({p:r[0],start:r[1],end:r[2]})), timetable:tt, windows:DEFAULT_WINDOWS, winTT:wt, bookings:[] };
 })();
 
 /* =================== API: Apps Script hoặc chế độ xem thử =================== */
@@ -408,10 +442,15 @@ const API = {
       arg===undefined ? r[fn]() : r[fn](arg);
     });
   },
-  load(){
-    if(HAS_GAS) return this.call('getData');
-    if(HAS_URL) return this.fetchJSON(SCRIPT_URL+'?action=data&t='+Date.now());
-    return Promise.resolve(Object.assign({},DEMO_DATA,{bookings:Demo.read()}));
+  async load(){
+    let d;
+    if(HAS_GAS) d=await this.call('getData');
+    else if(HAS_URL) d=await this.fetchJSON(SCRIPT_URL+'?action=data&t='+Date.now());
+    else d=Object.assign({},DEMO_DATA,{bookings:Demo.read()});
+    // Apps Script bản cũ chưa có khung ngoài giờ -> dùng mặc định (chưa có CLB)
+    if(!d.windows||!d.windows.length) d.windows=DEFAULT_WINDOWS;
+    if(!d.winTT) d.winTT={};
+    return d;
   },
   submit(f){
     if(OFFLINE) return Promise.resolve({ok:false,type:'invalid',message:'Hệ thống đăng ký đang tạm ngưng kết nối. Vui lòng thử lại sau hoặc liên hệ người quản lý phòng máy.'});
@@ -428,13 +467,13 @@ const Demo = {
     return new Promise(res=>setTimeout(()=>{
       const list=this.read();
       const err=validateForm(f); if(err.msg) return res({ok:false,type:'invalid',message:err.msg});
-      const conf=findConflicts(f.room,f.date,f.periods,list);
+      const conf=findConflicts(f,list);
       if(conf.length) return res({ok:false,type:'conflict',message:'Thời gian bạn chọn đã có người sử dụng phòng.',conflicts:conf});
       const code='PM'+f.date.slice(2).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
-      const b={code,name:f.name,room:f.room,date:f.date,periods:f.periods,purpose:f.purpose,status:'Đã đăng ký'};
+      const b={code,name:f.name,room:f.room,date:f.date,periods:f.win?[]:f.periods,win:f.win,start:f.start,end:f.end,purpose:f.purpose,status:'Đã đăng ký'};
       list.push(b); this.write(list);
       res({ok:true,booking:Object.assign({},b,{roomLabel:roomLabel(f.room),dayName:DATA.days[dayIdx(f.date)],
-        timeRange:periodRange(f.periods),emailSent:false})});
+        timeLabel:timeLabel(f),emailSent:false})});
     },500));
   }
 };
@@ -446,7 +485,8 @@ function vnNow(){
     hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(x=>o[x.type]=x.value);
   return {date:`${o.year}-${o.month}-${o.day}`, min:(+o.hour)*60+(+o.minute), hm:`${o.hour}:${o.minute}`};
 }
-const toMin=t=>{const p=t.split(':').map(Number);return p[0]*60+(p[1]||0)};
+const toMin=t=>{const p=String(t).split(':').map(Number);return p[0]*60+(p[1]||0)};
+const fromMin=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 function addDays(s,n){const p=s.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]+n)).toISOString().slice(0,10)}
 function dayIdx(s){const p=s.split('-').map(Number);const w=new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay();return w>=1&&w<=5?w-1:-1}
 function mondayOf(s){const p=s.split('-').map(Number);const w=new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay();return addDays(s,-((w+6)%7))}
@@ -454,61 +494,89 @@ const fmtVN=s=>s.split('-').reverse().join('/');
 const fmtShort=s=>{const p=s.split('-');return p[2]+'/'+p[1]};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
+const overlap=(a,b)=>toMin(a.start)<toMin(b.end)&&toMin(b.start)<toMin(a.end);
 
 /* =================== TRẠNG THÁI =================== */
 let OFFLINE=false, DATA=null, NOW=vnNow(), WEEK=null, VIEW_ROOM=null;
-const form={room:'',date:'',periods:[]};
+const form={room:'',date:'',periods:[],win:'',start:'',end:''};
 
 const roomLabel=id=>{const r=DATA.rooms.find(x=>x.id===id);return r?`${r.name} (${r.id})`:id};
 const period=p=>DATA.periods.find(x=>x.p===p);
+const winOf=n=>DATA.windows.find(w=>w.name===n);
 const periodRange=list=>list.map(p=>{const x=period(p);return x.start+'–'+x.end}).join(', ');
+const timeLabel=f=>f.win?`${f.win}: ${f.start}–${f.end}`:`Tiết ${f.periods.join(', ')} (${periodRange(f.periods)})`;
 function classInfo(c){const [cls,sub]=c.split(/[–-]/);return {cls:cls.trim(),sub:sub?(DATA.subjects[sub.trim()]||sub.trim()):''}}
-function slot(room,date,p){
-  const d=dayIdx(date); if(d<0) return {type:'off'};
-  const c=(DATA.timetable[room][d]||[])[p-1];
-  if(c) return {type:'class',label:c,info:classInfo(c)};
-  const b=DATA.bookings.find(b=>b.room===room&&b.date===date&&b.periods.includes(p));
-  if(b) return {type:'book',booking:b};
-  return {type:'free'};
+/** "CLB Robotics 16:00–17:00" -> {label,start,end}; không ghi giờ thì chiếm cả khung */
+function parseAct(cell,w){
+  const m=String(cell).match(/(\d{1,2})[:h](\d{2})\s*[–\-]\s*(\d{1,2})[:h](\d{2})/);
+  const label=(m?cell.replace(m[0],''):cell).replace(/[()\s]+$/,'').trim()||'Hoạt động';
+  return m?{label,start:m[1].padStart(2,'0')+':'+m[2],end:m[3].padStart(2,'0')+':'+m[4]}:{label,start:w.start,end:w.end};
 }
-function isPast(date,p){return date<NOW.date||(date===NOW.date&&toMin(period(p).end)<=NOW.min)}
-function findConflicts(room,date,periods,bookings){
-  const out=[], d=dayIdx(date);
-  periods.forEach(p=>{
-    const per=period(p), time=per.start+'–'+per.end, c=d>=0?(DATA.timetable[room][d]||[])[p-1]:'';
-    if(c){const i=classInfo(c);out.push({period:p,time,type:'class',label:`Lớp ${i.cls} – ${i.sub}`})}
-    (bookings||DATA.bookings).forEach(b=>{ if(b.room===room&&b.date===date&&b.periods.includes(p))
-      out.push({period:p,time,type:'booking',label:'Đã được mượn bởi '+b.name}) });
-  });
+function bTimes(b){
+  if(b.periods&&b.periods.length) return b.periods.map(p=>{const x=period(p);return x&&{start:x.start,end:x.end,p}}).filter(Boolean);
+  return b.start&&b.end?[{start:b.start,end:b.end,win:b.win}]:[];
+}
+/** Mọi hoạt động chiếm phòng trong ngày: lớp học (TKB), CLB, lượt mượn */
+function occupancy(room,date,bookings){
+  const d=dayIdx(date), out=[]; if(d<0) return out;
+  DATA.periods.forEach(p=>{const c=(DATA.timetable[room][d]||[])[p.p-1];
+    if(c){const i=classInfo(c);out.push({start:p.start,end:p.end,kind:'class',title:'Lớp '+i.cls,cls:i.cls,sub:i.sub,p:p.p})}});
+  DATA.windows.forEach(w=>{const c=((DATA.winTT[room]||[])[d]||{})[w.name];
+    if(c){const a=parseAct(c,w);out.push({start:a.start,end:a.end,kind:'club',title:a.label,sub:a.start+'–'+a.end})}});
+  (bookings||DATA.bookings).filter(b=>b.room===room&&b.date===date).forEach(b=>bTimes(b).forEach(t=>
+    out.push({start:t.start,end:t.end,kind:'book',title:b.name,sub:b.purpose||'',booking:b,p:t.p})));
+  return out.sort((a,b)=>toMin(a.start)-toMin(b.start));
+}
+function findConflicts(f,bookings){
+  const occ=occupancy(f.room,f.date,bookings), out=[];
+  bTimes(f.win?{start:f.start,end:f.end,win:f.win}:{periods:f.periods}).forEach(r=>occ.filter(o=>overlap(r,o)).forEach(o=>
+    out.push({when:r.p?`Tiết ${r.p}`:`${r.win} ${r.start}–${r.end}`,time:o.start+'–'+o.end,
+      label:o.kind==='class'?`Lớp ${o.cls} – ${o.sub}`:o.kind==='club'?o.title:'lượt mượn của '+o.title})));
   return out;
 }
+const isPastEnd=(date,end)=>date<NOW.date||(date===NOW.date&&toMin(end)<=NOW.min);
+const slotP=(room,date,p)=>{const x=period(p);return occupancy(room,date).find(o=>overlap(o,x))||null};
+/** Các khoảng còn trống trong một khung ngoài giờ */
+function freeGaps(room,date,w){
+  let cur=toMin(w.start); const end=toMin(w.end), gaps=[];
+  if(date===NOW.date) cur=Math.max(cur,Math.ceil(NOW.min/5)*5);
+  occupancy(room,date).filter(o=>overlap(o,w)).forEach(o=>{
+    if(toMin(o.start)-cur>=10) gaps.push({start:fromMin(cur),end:o.start});
+    cur=Math.max(cur,toMin(o.end));
+  });
+  if(end-cur>=10) gaps.push({start:fromMin(cur),end:w.end});
+  return gaps;
+}
+/** Danh sách hàng của lịch: tiết + khung ngoài giờ, theo thứ tự thời gian */
+const rowsOfDay=()=>[...DATA.periods.map(p=>Object.assign({t:'p'},p)),...DATA.windows.map(w=>Object.assign({t:'w'},w))]
+  .sort((a,b)=>toMin(a.start)-toMin(b.start));
 
 /* =================== NGAY BÂY GIỜ =================== */
 function renderNow(){
   $('clock').textContent=`${DATA.days[dayIdx(NOW.date)]||(new Date().getDay()===6?'Thứ 7':'Chủ nhật')}, ${fmtVN(NOW.date)} · ${NOW.hm}`;
-  const d=dayIdx(NOW.date);
-  const cur=DATA.periods.find(p=>toMin(p.start)<=NOW.min&&NOW.min<toMin(p.end));
-  const next=DATA.periods.find(p=>toMin(p.start)>NOW.min);
-  let note='';
+  const d=dayIdx(NOW.date), rows=rowsOfDay();
+  const cur=rows.find(r=>toMin(r.start)<=NOW.min&&NOW.min<toMin(r.end));
+  const next=rows.find(r=>toMin(r.start)>NOW.min);
+  let note;
   if(d<0) note='Hôm nay là ngày nghỉ – phòng máy không hoạt động.';
-  else if(cur) note=`Đang trong tiết ${cur.p} (${cur.start}–${cur.end}).`;
-  else if(next) note=`Hiện đang giờ nghỉ. Tiết tiếp theo: tiết ${next.p} lúc ${next.start}.`;
-  else note='Đã hết giờ học hôm nay.';
+  else if(cur) note=cur.t==='p'?`Đang trong tiết ${cur.p} (${cur.start}–${cur.end}).`:`Đang trong khung ${cur.name} (${cur.start}–${cur.end}) – có thể mượn theo giờ.`;
+  else if(next) note=`Giờ chuyển tiết. Tiếp theo: ${next.t==='p'?'tiết '+next.p:next.name} lúc ${next.start}.`;
+  else note='Đã hết giờ hoạt động của phòng máy hôm nay.';
   $('nowNote').textContent=note;
 
   $('nowGrid').innerHTML=DATA.rooms.map(r=>{
-    let st='off',badge='NGOÀI GIỜ',detail='Phòng không có tiết nào lúc này.';
-    if(d>=0&&cur){
-      const s=slot(r.id,NOW.date,cur.p);
-      if(s.type==='class'){st='class';badge='ĐANG DẠY';detail=`Lớp <b>${esc(s.info.cls)}</b> – ${esc(s.info.sub)}`}
-      else if(s.type==='book'){st='book';badge='ĐANG ĐƯỢC MƯỢN';detail=`<b>${esc(s.booking.name)}</b> – ${esc(s.booking.purpose||'')}`}
-      else {st='free';badge='ĐANG TRỐNG';detail='Có thể đăng ký sử dụng tiết này.'}
-    }
-    let nxt='';
+    let st='off',badge='NGOÀI GIỜ',detail='Phòng máy không hoạt động lúc này.',nxt='';
     if(d>=0){
-      const up=DATA.periods.filter(p=>toMin(p.start)>NOW.min).map(p=>({p,s:slot(r.id,NOW.date,p.p)})).find(x=>x.s.type!=='free');
-      if(up) nxt=`<div class="detail">Tiếp theo: tiết ${up.p.p} (${up.p.start}) – ${up.s.type==='class'?'Lớp '+esc(up.s.info.cls):'Mượn: '+esc(up.s.booking.name)}</div>`;
-      else nxt='<div class="detail">Không còn lịch nào trong hôm nay.</div>';
+      const occ=occupancy(r.id,NOW.date);
+      const o=occ.find(x=>toMin(x.start)<=NOW.min&&NOW.min<toMin(x.end));
+      if(o&&o.kind==='class'){st='class';badge='ĐANG DẠY';detail=`Lớp <b>${esc(o.cls)}</b> – ${esc(o.sub)}`}
+      else if(o&&o.kind==='club'){st='club';badge='ĐANG CÓ '+esc(o.title).toUpperCase();detail=`${esc(o.start)}–${esc(o.end)}`}
+      else if(o){st='book';badge='ĐANG ĐƯỢC MƯỢN';detail=`<b>${esc(o.title)}</b> – ${esc(o.sub)} (${o.start}–${o.end})`}
+      else if(cur){st='free';badge='ĐANG TRỐNG';detail=cur.t==='p'?'Có thể đăng ký sử dụng tiết này.':'Có thể mượn theo giờ trong khung '+esc(cur.name)+'.'}
+      else if(next){st='free';badge='ĐANG TRỐNG';detail='Giờ chuyển tiết.'}
+      const up=occ.find(x=>toMin(x.start)>NOW.min);
+      nxt=up?`<div class="detail">Tiếp theo: ${up.start} – ${up.kind==='class'?'Lớp '+esc(up.cls):up.kind==='club'?esc(up.title):'Mượn: '+esc(up.title)}</div>`
+            :'<div class="detail">Không còn lịch nào trong hôm nay.</div>';
     }
     return `<div class="room-card st-${st}"><div class="monitor">${r.id.slice(0,3)}</div><div>
       <h3>${esc(r.name)} · ${esc(r.id)}</h3><span class="badge">${badge}</span>
@@ -523,19 +591,32 @@ function renderTabs(){
 function renderGrid(){
   const dates=[0,1,2,3,4].map(i=>addDays(WEEK,i));
   $('weekLabel').textContent=`Tuần ${fmtShort(dates[0])} – ${fmtVN(dates[4])}`;
-  const cur=DATA.periods.find(p=>toMin(p.start)<=NOW.min&&NOW.min<toMin(p.end));
+  const isNow=(dt,r)=>dt===NOW.date&&toMin(r.start)<=NOW.min&&NOW.min<toMin(r.end);
   let h='<thead><tr><th class="ph">Tiết</th>'+dates.map((dt,i)=>`<th class="${dt===NOW.date?'today':''}">${DATA.days[i]}<small>${fmtShort(dt)}</small></th>`).join('')+'</tr></thead><tbody>';
-  DATA.periods.forEach((p,idx)=>{
-    if(idx>0&&toMin(p.start)-toMin(DATA.periods[idx-1].end)>60) h+='<tr class="break"><td colspan="6">— Nghỉ trưa —</td></tr>';
-    h+=`<tr><td class="pcell">Tiết ${p.p}<small>${p.start}–${p.end}</small></td>`;
-    dates.forEach(dt=>{
-      const s=slot(VIEW_ROOM,dt,p.p), past=isPast(dt,p.p), isCur=cur&&cur.p===p.p&&dt===NOW.date;
-      const cls=[s.type, past?'past':'', isCur?'cur':''].join(' ');
-      if(s.type==='class') h+=`<td class="${cls}" title="Lớp ${esc(s.info.cls)} – ${esc(s.info.sub)}"><span class="c1">${esc(s.info.cls)}</span><span class="c2">${esc(s.info.sub)}</span></td>`;
-      else if(s.type==='book') h+=`<td class="${cls}" title="${esc(s.booking.name)}: ${esc(s.booking.purpose)}"><span class="c1">Đã mượn</span><span class="c2">${esc(s.booking.name)}</span></td>`;
-      else if(past) h+=`<td class="${cls}">–</td>`;
-      else h+=`<td class="${cls}" tabindex="0" role="button" data-date="${dt}" data-p="${p.p}" aria-label="Đăng ký tiết ${p.p} ngày ${fmtVN(dt)}"><span class="plus">＋ Mượn</span></td>`;
-    });
+  rowsOfDay().forEach(row=>{
+    if(row.t==='p'){
+      h+=`<tr><td class="pcell">Tiết ${row.p}<small>${row.start}–${row.end}</small></td>`;
+      dates.forEach(dt=>{
+        const o=slotP(VIEW_ROOM,dt,row.p), past=isPastEnd(dt,row.end);
+        const cls=[o?(o.kind==='class'?'class':o.kind==='club'?'club':'book'):'free', past?'past':'', isNow(dt,row)?'cur':''].join(' ');
+        if(o&&o.kind==='class') h+=`<td class="${cls}" title="Lớp ${esc(o.cls)} – ${esc(o.sub)}"><span class="c1">${esc(o.cls)}</span><span class="c2">${esc(o.sub)}</span></td>`;
+        else if(o&&o.kind==='club') h+=`<td class="${cls}" title="${esc(o.title)}"><span class="c1">${esc(o.title)}</span><span class="c2">${esc(o.sub)}</span></td>`;
+        else if(o) h+=`<td class="${cls}" title="${esc(o.title)}: ${esc(o.sub)}"><span class="c1">Đã mượn</span><span class="c2">${esc(o.title)}</span></td>`;
+        else if(past) h+=`<td class="${cls}">–</td>`;
+        else h+=`<td class="${cls}" tabindex="0" role="button" data-date="${dt}" data-p="${row.p}" aria-label="Đăng ký tiết ${row.p} ngày ${fmtVN(dt)}"><span class="plus">＋ Mượn</span></td>`;
+      });
+    } else {
+      const icon=toMin(row.start)<12*60?'🍱':'🌆';
+      h+=`<tr class="wrow"><td class="pcell wcell">${icon} ${esc(row.name)}<small>${row.start}–${row.end}</small></td>`;
+      dates.forEach(dt=>{
+        const items=occupancy(VIEW_ROOM,dt).filter(o=>overlap(o,row)), past=isPastEnd(dt,row.end);
+        const gaps=past?[]:freeGaps(VIEW_ROOM,dt,row), open=gaps.length>0;
+        const chips=items.map(o=>`<span class="mini ${o.kind}" title="${esc(o.title)} ${o.start}–${o.end}">${o.kind==='book'?'🔒 ':''}${esc(o.kind==='class'?o.title:o.title)} · ${o.start}–${o.end}</span>`).join('');
+        const cls=['win', open?'free':'', past?'past':'', isNow(dt,row)?'cur':''].join(' ');
+        h+=open?`<td class="${cls}" tabindex="0" role="button" data-date="${dt}" data-win="${esc(row.name)}" aria-label="Mượn khung ${esc(row.name)} ngày ${fmtVN(dt)}">${chips}<span class="plus">＋ Mượn (ghi giờ)</span></td>`
+               :`<td class="${cls}">${chips||'–'}</td>`;
+      });
+    }
     h+='</tr>';
   });
   $('tt').innerHTML=h+'</tbody>';
@@ -547,33 +628,68 @@ function renderRoomPick(){
 }
 function renderPeriods(){
   const g=$('pgrid');
-  if(!form.room||!form.date){g.innerHTML='<div class="hint" style="grid-column:1/-1">Hãy chọn phòng và ngày trước để xem các tiết còn trống.</div>';renderSummary();return}
-  if(dayIdx(form.date)<0){g.innerHTML='<div class="err" style="grid-column:1/-1">Ngày bạn chọn là Thứ 7/Chủ nhật – phòng máy không cho mượn.</div>';form.periods=[];renderSummary();return}
+  if(!form.room||!form.date){g.innerHTML='<div class="hint" style="grid-column:1/-1">Hãy chọn phòng và ngày trước để xem các tiết còn trống.</div>';renderCustom();renderSummary();return}
+  if(dayIdx(form.date)<0){g.innerHTML='<div class="err" style="grid-column:1/-1">Ngày bạn chọn là Thứ 7/Chủ nhật – phòng máy không cho mượn.</div>';form.periods=[];form.win='';renderCustom();renderSummary();return}
   g.innerHTML=DATA.periods.map(p=>{
-    const s=slot(form.room,form.date,p.p), past=isPast(form.date,p.p);
+    const o=slotP(form.room,form.date,p.p), past=isPastEnd(form.date,p.end);
     let cls='pchip', who='Trống';
     if(past){cls+=' past';who='Đã qua'}
-    else if(s.type==='class'){cls+=' busy';who='Lớp '+s.info.cls}
-    else if(s.type==='book'){cls+=' busy';who='Đã mượn'}
+    else if(o){cls+=' busy';who=o.kind==='class'?'Lớp '+o.cls:o.kind==='club'?o.title:'Đã mượn'}
     if(form.periods.includes(p.p)) cls+=' sel';
     return `<div class="${cls}" role="checkbox" tabindex="0" aria-checked="${form.periods.includes(p.p)}" data-p="${p.p}">Tiết ${p.p}<small>${p.start}–${p.end}</small><span class="who">${esc(who)}</span></div>`;
+  }).join('')+DATA.windows.map(w=>{
+    const past=isPastEnd(form.date,w.end), gaps=past?[]:freeGaps(form.room,form.date,w), on=form.win===w.name;
+    let cls='pchip wchip', who;
+    if(past){cls+=' past';who='Đã qua'}
+    else if(!gaps.length){cls+=' busy';who='Kín lịch'}
+    else who='Còn trống: '+gaps.map(x=>x.start+'–'+x.end).join(', ');
+    if(on) cls+=' sel';
+    const icon=toMin(w.start)<12*60?'🍱':'🌆';
+    return `<div class="${cls}" role="radio" tabindex="0" aria-checked="${on}" data-win="${esc(w.name)}">${icon} ${esc(w.name)} <small>Ngoài giờ học · ${w.start}–${w.end} · tự ghi giờ</small><span class="who">${esc(who)}</span></div>`;
   }).join('');
-  renderSummary();
+  renderCustom(); renderSummary();
+}
+function renderCustom(){
+  const box=$('customBox'), w=form.win&&winOf(form.win);
+  if(!w||!form.room||!form.date){box.hidden=true;return}
+  box.hidden=false;
+  const busy=occupancy(form.room,form.date).filter(o=>overlap(o,w));
+  $('customTitle').innerHTML=`Ghi giờ cụ thể trong khung <b>${esc(w.name)}</b> (${w.start}–${w.end}):`;
+  $('tStart').min=$('tEnd').min=w.start; $('tStart').max=$('tEnd').max=w.end;
+  if($('tStart').value!==form.start) $('tStart').value=form.start;
+  if($('tEnd').value!==form.end) $('tEnd').value=form.end;
+  $('customBusy').innerHTML=busy.length?'Đã có lịch: '+busy.map(o=>`<b>${esc(o.kind==='book'?'Mượn – '+o.title:o.title)}</b> ${o.start}–${o.end}`).join('; '):'Khung này hiện chưa có ai sử dụng.';
 }
 function renderSummary(){
   const el=$('summary');
-  if(!form.room||!form.date||!form.periods.length){el.hidden=true;return}
+  const ok=form.room&&form.date&&(form.win?(form.start&&form.end):form.periods.length);
+  if(!ok){el.hidden=true;return}
   el.hidden=false;
-  el.innerHTML=`📌 Bạn đang đăng ký: <b>${esc(roomLabel(form.room))}</b> · <b>${DATA.days[dayIdx(form.date)]}, ${fmtVN(form.date)}</b> · Tiết <b>${form.periods.join(', ')}</b> (${periodRange(form.periods)})`;
+  el.innerHTML=`📌 Bạn đang đăng ký: <b>${esc(roomLabel(form.room))}</b> · <b>${DATA.days[dayIdx(form.date)]}, ${fmtVN(form.date)}</b> · <b>${esc(timeLabel(form))}</b>`;
 }
 function togglePeriod(p){
-  const s=slot(form.room,form.date,p);
-  if(isPast(form.date,p)) return toast(`Tiết ${p} đã qua, không thể đăng ký.`);
-  if(s.type==='class') return toast(`⚠️ Trùng lịch! Tiết ${p} đang có lớp ${s.info.cls} – ${s.info.sub}.`);
-  if(s.type==='book') return toast(`⚠️ Trùng lịch! Tiết ${p} đã được ${s.booking.name} mượn.`);
+  const o=slotP(form.room,form.date,p);
+  if(isPastEnd(form.date,period(p).end)) return toast(`Tiết ${p} đã qua, không thể đăng ký.`);
+  if(o&&o.kind==='class') return toast(`⚠️ Trùng lịch! Tiết ${p} đang có lớp ${o.cls} – ${o.sub}.`);
+  if(o&&o.kind==='club') return toast(`⚠️ Trùng lịch! Tiết ${p} trùng với ${o.title} (${o.start}–${o.end}).`);
+  if(o) return toast(`⚠️ Trùng lịch! Tiết ${p} đã được ${o.title} mượn.`);
+  form.win='';
   form.periods=form.periods.includes(p)?form.periods.filter(x=>x!==p):[...form.periods,p].sort((a,b)=>a-b);
   setErr('periods','');
   renderPeriods();
+}
+function selectWin(name){
+  const w=winOf(name); if(!w) return;
+  if(form.win===name){form.win='';return renderPeriods()}
+  if(isPastEnd(form.date,w.end)) return toast(`Khung ${w.name} hôm nay đã qua.`);
+  const gaps=freeGaps(form.room,form.date,w);
+  if(!gaps.length) return toast(`⚠️ Khung ${w.name} ngày này đã kín lịch.`);
+  form.win=name; form.periods=[];
+  // gợi ý sẵn: 60 phút đầu của khoảng trống đầu tiên
+  form.start=gaps[0].start; form.end=fromMin(Math.min(toMin(gaps[0].end),toMin(gaps[0].start)+60));
+  setErr('periods','');
+  renderPeriods();
+  setTimeout(()=>$('tStart').focus({preventScroll:true}),50);
 }
 
 function validateForm(f){
@@ -586,7 +702,14 @@ function validateForm(f){
   else if(dayIdx(f.date)<0) e.date='Chỉ mượn từ Thứ 2 đến Thứ 6.';
   else if(f.date<NOW.date) e.date='Ngày này đã qua.';
   else if(f.date>addDays(NOW.date,DATA.config.maxDaysAhead)) e.date=`Chỉ được đăng ký trước tối đa ${DATA.config.maxDaysAhead} ngày.`;
-  if(!f.periods||!f.periods.length) e.periods='Vui lòng chọn ít nhất 1 tiết.';
+  if(f.win){
+    const w=winOf(f.win);
+    if(!w) e.periods='Khung giờ không hợp lệ.';
+    else if(!/^\d\d:\d\d$/.test(f.start||'')||!/^\d\d:\d\d$/.test(f.end||'')) e.periods='Vui lòng nhập giờ bắt đầu và giờ kết thúc.';
+    else if(toMin(f.start)>=toMin(f.end)) e.periods='Giờ kết thúc phải sau giờ bắt đầu.';
+    else if(toMin(f.start)<toMin(w.start)||toMin(f.end)>toMin(w.end)) e.periods=`Thời gian phải nằm trong khung ${w.name} (${w.start}–${w.end}).`;
+    else if(f.date&&isPastEnd(f.date,f.end)) e.periods='Khung giờ này đã qua.';
+  } else if(!f.periods||!f.periods.length) e.periods='Vui lòng chọn ít nhất 1 tiết hoặc một khung ngoài giờ.';
   if(!f.purpose||f.purpose.trim().length<3) e.purpose='Vui lòng ghi mục đích sử dụng.';
   if(!f.agree) e.agree='Bạn cần tích vào ô cam kết.';
   const keys=Object.keys(e); e.msg=keys.length?e[keys[0]]:'';
@@ -598,7 +721,8 @@ function setErr(k,msg){
 }
 function collect(){
   return {name:$('name').value.trim(),email:$('email').value.trim(),phone:$('phone').value.trim(),
-    room:form.room,date:form.date,periods:form.periods.slice(),purpose:$('purpose').value.trim(),
+    room:form.room,date:form.date,periods:form.win?[]:form.periods.slice(),win:form.win,
+    start:form.win?form.start:'',end:form.win?form.end:'',purpose:$('purpose').value.trim(),
     students:$('students').value.trim(),agree:$('agree').checked};
 }
 
@@ -609,7 +733,7 @@ async function onSubmit(ev){
   ['name','phone','email','room','date','periods','purpose','agree'].forEach(k=>setErr(k,e[k]));
   if(e.msg){toast(e.msg);const first=document.querySelector('.err:not(:empty)');first&&first.parentElement.scrollIntoView({behavior:'smooth',block:'center'});return}
   // kiểm tra trùng ngay trên trình duyệt
-  const conf=findConflicts(f.room,f.date,f.periods);
+  const conf=findConflicts(f);
   if(conf.length) return showConflict({message:'Thời gian bạn chọn đã có người sử dụng phòng.',conflicts:conf});
   const btn=$('submitBtn'); btn.disabled=true; btn.innerHTML='<span class="spin"></span>Đang gửi…';
   try{
@@ -626,19 +750,20 @@ async function onSubmit(ev){
 function openModal(id){$(id).classList.add('show');const b=$(id).querySelector('button');b&&b.focus()}
 function closeModal(el){el.classList.remove('show')}
 function showSuccess(b){
+  const when=b.timeLabel||`Tiết ${(b.periods||[]).join(', ')} (${b.timeRange||''})`;
   $('resBox').className='mbox'; $('resTitle').textContent='Đăng ký thành công'; $('resStars').textContent='★★★';
   $('resBody').innerHTML=`<h4>Mã đăng ký của bạn</h4><div class="code">${esc(b.code)}</div>
     <dl class="kv"><dt>Người mượn</dt><dd>${esc(b.name)}</dd><dt>Phòng</dt><dd>${esc(b.roomLabel)}</dd>
-    <dt>Ngày</dt><dd>${esc(b.dayName)}, ${fmtVN(b.date)}</dd><dt>Tiết</dt><dd>${b.periods.join(', ')} (${esc(b.timeRange)})</dd>
+    <dt>Ngày</dt><dd>${esc(b.dayName)}, ${fmtVN(b.date)}</dd><dt>Thời gian</dt><dd>${esc(when)}</dd>
     <dt>Mục đích</dt><dd>${esc(b.purpose)}</dd></dl>
     <p style="margin:10px 0 0;font-weight:700">${b.emailSent?'📧 Email xác nhận đã được gửi tới '+esc(b.email)+'.':'Vui lòng ghi lại mã đăng ký để đối chiếu khi cần.'}</p>`;
   openModal('resModal');
 }
 function showConflict(r){
   $('resBox').className='mbox lose'; $('resTitle').textContent='Trùng lịch!'; $('resStars').textContent='✖';
-  $('resBody').innerHTML=`<h4>Không thể đăng ký</h4><p style="margin:0">${esc(r.message)} Các tiết bị trùng:</p>
-    <ul class="clist">${(r.conflicts||[]).map(c=>`<li><b>Tiết ${c.period}</b> (${esc(c.time)}): ${esc(c.label)}</li>`).join('')}</ul>
-    <p style="margin:8px 0 0">Vui lòng chọn tiết khác, ngày khác hoặc phòng còn lại.</p>`;
+  $('resBody').innerHTML=`<h4>Không thể đăng ký</h4><p style="margin:0">${esc(r.message)} Chi tiết:</p>
+    <ul class="clist">${(r.conflicts||[]).map(c=>`<li><b>${esc(c.when||('Tiết '+c.period))}</b> trùng với ${esc(c.label)} (${esc(c.time)})</li>`).join('')}</ul>
+    <p style="margin:8px 0 0">Vui lòng chọn giờ khác, ngày khác hoặc phòng còn lại.</p>`;
   openModal('resModal');
 }
 function showError(msg){
@@ -654,7 +779,8 @@ function resetForm(keepContact){
   const keep=keepContact?{name:$('name').value,email:$('email').value,phone:$('phone').value}:null;
   $('form').reset();
   if(keep){$('name').value=keep.name;$('email').value=keep.email;$('phone').value=keep.phone}
-  form.periods=[]; if(!keepContact){form.room='';form.date=''} else $('date').value=form.date;
+  form.periods=[]; form.win=''; form.start=''; form.end='';
+  if(!keepContact){form.room='';form.date=''} else $('date').value=form.date;
   document.querySelectorAll('.err').forEach(e=>e.textContent='');document.querySelectorAll('.inp.bad').forEach(e=>e.classList.remove('bad'));
   renderRoomPick(); renderPeriods();
 }
@@ -664,12 +790,13 @@ async function reload(){
 }
 function renderAll(){ renderNow(); renderTabs(); renderGrid(); renderRoomPick(); renderPeriods(); }
 
-function prefill(room,date,p){
+function prefill(room,date,p,win){
   form.room=room; form.date=date; $('date').value=date;
-  if(!form.periods.includes(p)) form.periods=[...form.periods,p].sort((a,b)=>a-b);
-  renderRoomPick(); renderPeriods();
+  if(win){ form.win=''; renderPeriods(); selectWin(win); }
+  else { form.win=''; if(!form.periods.includes(p)) form.periods=[...form.periods,p].sort((a,b)=>a-b); renderPeriods(); }
+  renderRoomPick();
   $('booking').scrollIntoView({behavior:'smooth',block:'start'});
-  setTimeout(()=>$('name').value?null:$('name').focus({preventScroll:true}),500);
+  if(!win) setTimeout(()=>$('name').value?null:$('name').focus({preventScroll:true}),500);
 }
 
 function bind(){
@@ -677,23 +804,25 @@ function bind(){
   $('nextW').onclick=()=>{WEEK=addDays(WEEK,7);renderGrid()};
   $('thisW').onclick=()=>{WEEK=mondayOf(dayIdx(NOW.date)<0?addDays(NOW.date,2):NOW.date);renderGrid()};
   $('roomTabs').onclick=e=>{const b=e.target.closest('[data-room]');if(b){VIEW_ROOM=b.dataset.room;renderTabs();renderGrid()}};
-  const ttAct=e=>{const td=e.target.closest('td[data-date]');if(td)prefill(VIEW_ROOM,td.dataset.date,+td.dataset.p)};
+  const ttAct=e=>{const td=e.target.closest('td[data-date]');if(td)prefill(VIEW_ROOM,td.dataset.date,+td.dataset.p,td.dataset.win)};
   $('tt').onclick=ttAct;
   $('tt').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();ttAct(e)}};
-  $('roomPick').onchange=e=>{form.room=e.target.value;form.periods=[];setErr('room','');renderPeriods()};
-  $('date').onchange=e=>{form.date=e.target.value;form.periods=[];setErr('date','');renderPeriods();
+  $('roomPick').onchange=e=>{form.room=e.target.value;form.periods=[];form.win='';setErr('room','');renderPeriods()};
+  $('date').onchange=e=>{form.date=e.target.value;form.periods=[];form.win='';setErr('date','');renderPeriods();
     if(form.date&&dayIdx(form.date)>=0){WEEK=mondayOf(form.date);renderGrid()}};
-  const pAct=e=>{const c=e.target.closest('.pchip');if(c)togglePeriod(+c.dataset.p)};
+  const pAct=e=>{const c=e.target.closest('.pchip');if(!c)return;c.dataset.win?selectWin(c.dataset.win):togglePeriod(+c.dataset.p)};
   $('pgrid').onclick=pAct;
   $('pgrid').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pAct(e)}};
+  const tChange=()=>{form.start=$('tStart').value;form.end=$('tEnd').value;setErr('periods','');renderSummary()};
+  $('tStart').addEventListener('input',tChange); $('tEnd').addEventListener('input',tChange);
   $('quick').onclick=e=>{
     const q=e.target.closest('[data-q]'); if(!q) return;
-    if(q.dataset.q==='none'){form.periods=[];return renderPeriods()}
+    if(q.dataset.q==='none'){form.periods=[];form.win='';return renderPeriods()}
     if(!form.room||!form.date||dayIdx(form.date)<0) return toast('Hãy chọn phòng và ngày (Thứ 2–Thứ 6) trước.');
     const am=q.dataset.q==='am';
-    const ok=DATA.periods.filter(p=>(am?toMin(p.start)<12*60:toMin(p.start)>=12*60)&&slot(form.room,form.date,p.p).type==='free'&&!isPast(form.date,p.p)).map(p=>p.p);
+    const ok=DATA.periods.filter(p=>(am?toMin(p.start)<12*60:toMin(p.start)>=12*60)&&!slotP(form.room,form.date,p.p)&&!isPastEnd(form.date,p.end)).map(p=>p.p);
     if(!ok.length) return toast(`Buổi ${am?'sáng':'chiều'} không còn tiết trống.`);
-    form.periods=[...new Set([...form.periods,...ok])].sort((a,b)=>a-b); renderPeriods();
+    form.win=''; form.periods=[...new Set([...form.periods,...ok])].sort((a,b)=>a-b); renderPeriods();
   };
   ['name','phone','email','purpose'].forEach(k=>$(k).addEventListener('input',()=>setErr(k,'')));
   $('agree').onchange=()=>setErr('agree','');
