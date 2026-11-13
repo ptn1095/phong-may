@@ -23,8 +23,8 @@ const CONFIG = {
 };
 
 const ROOMS = [
-  { id: '117T', name: 'Phòng máy 1', short: 'P.117T' },
-  { id: '119T', name: 'Phòng máy 2', short: 'P.119T' }
+  { id: '117T', name: 'Phòng máy 1', short: 'P.117T', machines: 32 },   // machines = số máy tối đa của phòng
+  { id: '119T', name: 'Phòng máy 2', short: 'P.119T', machines: 30 }
 ];
 
 const SUBJECTS = { THOC1: 'Tin học', CNGH1: 'Công nghệ', CODI: 'Coding' };
@@ -137,6 +137,12 @@ function submitBooking(f) {
       const clash = bookingTimes_(tkb, A).some(x => bookingTimes_(tkb, B).some(y => toMin_(x.start) < toMin_(y.end) && toMin_(y.start) < toMin_(x.end)));
       if (clash) return { ok: false, type: 'invalid', message: 'Các khung bạn chọn bị chồng giờ nhau: ' + itemPrefix_(A) + ' – ' + timeLabel_(tkb, A) + ' và ' + timeLabel_(tkb, B) + '.' };
     }
+
+    // số người dùng không vượt quá số máy của phòng
+    const n = Number(c.students);
+    if (c.students && (!(n >= 1) || Math.floor(n) !== n)) return { ok: false, type: 'invalid', message: 'Số người sử dụng không hợp lệ.' };
+    const small = ROOMS.filter(r => r.machines && n > r.machines && groups.some(g => g.room === r.id))[0];
+    if (small) return { ok: false, type: 'invalid', message: 'Phòng ' + small.id + ' chỉ có tối đa ' + small.machines + ' máy, bạn đăng ký ' + n + ' người.' };
 
     const bookings = readBookings_(ss);
     let conflicts = [];

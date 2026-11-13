@@ -362,8 +362,9 @@ footer{text-align:center;color:#fff;font-weight:600;opacity:.9;margin-top:10px;f
         </div>
         <div>
           <label class="f" for="students">Số người sử dụng (dự kiến)</label>
-          <input class="inp" id="students" name="students" type="number" min="1" max="60" placeholder="VD: 30">
-          <div class="hint">Mỗi phòng tối đa khoảng 35 máy.</div>
+          <input class="inp" id="students" name="students" type="number" min="1" max="32" step="1" inputmode="numeric" placeholder="VD: 28">
+          <div class="hint" id="machinesHint">Phòng 117T tối đa 32 máy · Phòng 119T tối đa 30 máy.</div>
+          <div class="err" data-for="students"></div>
         </div>
         <div class="full">
           <div class="commit">
@@ -472,7 +473,7 @@ const DEMO_DATA = (function(){
   ];
   // Hoạt động cố định ngoài giờ: [phòng, thứ (0 = Thứ 2), khung, nội dung]
   const acts = [['117T',2,'Cuối giờ học','CLB'],['117T',3,'Cuối giờ học','CLB'],['119T',3,'Cuối giờ học','CLB']];
-  const rooms=[{id:'117T',name:'Phòng máy 1',short:'P.117T'},{id:'119T',name:'Phòng máy 2',short:'P.119T'}];
+  const rooms=[{id:'117T',name:'Phòng máy 1',short:'P.117T',machines:32},{id:'119T',name:'Phòng máy 2',short:'P.119T',machines:30}];
   const tt={}, wt={}; rooms.forEach(r=>{tt[r.id]=[[],[],[],[],[]];wt[r.id]=[{},{},{},{},{}]});
   rows.forEach(r=>{ for(let d=0;d<5;d++) rooms.forEach((rm,ri)=>tt[rm.id][d][r[0]-1]=r[3+d*2+ri]); });
   acts.forEach(a=>wt[a[0]][a[1]][a[2]]=a[3]);
@@ -506,6 +507,8 @@ const API = {
     // Apps Script bản cũ chưa có khung ngoài giờ -> dùng mặc định (chưa có CLB)
     if(!d.windows||!d.windows.length) d.windows=DEFAULT_WINDOWS;
     if(!d.winTT) d.winTT={};
+    const MACHINES={'117T':32,'119T':30};
+    d.rooms=d.rooms.map(r=>Object.assign({machines:MACHINES[r.id]},r));
     return d;
   },
   submit(f){
@@ -793,6 +796,7 @@ function goWeek(target){
 
 /* =================== FORM: LỊCH ĐÃ CHỌN =================== */
 function renderCart(){
+  renderMachines();
   const box=$('cartBox');
   if(!CART.length){box.innerHTML=`<div class="hint" style="font-size:15px">Chưa có thời gian nào. Hãy bấm <b>＋ Mượn</b> trên <b>Lịch phòng máy</b> phía trên, xem lại và xác nhận từng tuần.</div>
     <div class="foot"><span></span><button type="button" class="btn blue small" data-go="grid">↑ Chọn trên lịch</button></div>`;return}
@@ -813,6 +817,14 @@ function validateForm(f,full){
   if(!/^(0|\+84)\d{9,10}$/.test((f.phone||'').replace(/[\s.\-]/g,''))) e.phone='Số điện thoại chưa đúng (VD: 0912345678).';
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email||'')) e.email='Email chưa đúng định dạng.';
   if(!f.purpose||f.purpose.trim().length<3) e.purpose='Vui lòng ghi mục đích sử dụng.';
+  if(f.students){
+    const n=Number(f.students);
+    if(!(n>=1)||Math.floor(n)!==n) e.students='Số người sử dụng không hợp lệ.';
+    else{
+      const small=DATA.rooms.find(r=>r.machines&&n>r.machines&&(f.items||[]).some(it=>it.room===r.id));
+      if(small) e.students=`Phòng ${small.id} chỉ có tối đa ${small.machines} máy.`;
+    }
+  }
   if(!f.agree) e.agree='Bạn cần tích vào ô cam kết.';
   const keys=Object.keys(e); e.msg=keys.length?e[keys[0]]:'';
   return e;
@@ -854,7 +866,7 @@ async function onSubmit(ev){
   const pendWeek=[...new Set(CART.filter(c=>!c.ok).map(c=>mondayOf(c.date)))].sort()[0];
   if(pendWeek){setErr('items',`Tuần ${weekText(pendWeek)} còn khung chưa xác nhận.`);return openReview(pendWeek)}
   const f=collect(), e=validateForm(f);
-  ['items','name','phone','email','purpose','agree'].forEach(k=>setErr(k,e[k]));
+  ['items','name','phone','email','purpose','students','agree'].forEach(k=>setErr(k,e[k]));
   if(e.msg){toast(e.msg);const first=document.querySelector('.err:not(:empty)');first&&first.parentElement.scrollIntoView({behavior:'smooth',block:'center'});return}
   const conf=itemsConflicts(f.items);
   if(conf.length) return showConflict({message:'Có khung thời gian đã có người sử dụng phòng.',conflicts:conf});
@@ -908,6 +920,11 @@ async function reload(){
   try{ DATA=await API.load(); }catch(e){ toast('Không tải được dữ liệu, thử lại sau.'); return }
   renderAll();
 }
+function renderMachines(){
+  $('machinesHint').textContent=DATA.rooms.filter(r=>r.machines).map(r=>`Phòng ${r.id} tối đa ${r.machines} máy`).join(' · ')+'.';
+  const rooms=[...new Set(CART.map(c=>c.room))], caps=DATA.rooms.filter(r=>r.machines&&(!rooms.length||rooms.includes(r.id))).map(r=>r.machines);
+  if(caps.length) $('students').max=Math.min(...caps);
+}
 function renderAll(){ renderNow(); renderTabs(); renderGrid(); renderCart(); }
 
 function bind(){
@@ -937,7 +954,7 @@ function bind(){
   };
   $('winAdd').onclick=addWin;
   ['tStart','tEnd'].forEach(k=>$(k).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addWin()}}));
-  ['name','phone','email','purpose'].forEach(k=>$(k).addEventListener('input',()=>setErr(k,'')));
+  ['name','phone','email','purpose','students'].forEach(k=>$(k).addEventListener('input',()=>setErr(k,'')));
   $('agree').onchange=()=>setErr('agree','');
   $('form').onsubmit=onSubmit;
   $('resetBtn').onclick=()=>resetForm(false);
