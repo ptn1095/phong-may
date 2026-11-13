@@ -5,7 +5,8 @@ Web xem lịch và đăng ký mượn **Phòng máy 1 (117T)** và **Phòng máy
 - Xem thời khóa biểu theo tuần, biết phòng nào đang có lớp học.
 - Đăng ký mượn theo tiết, hoặc theo **giờ cụ thể** trong khung ngoài giờ học (**Nghỉ trưa** 11:25–13:35, **Cuối giờ học** 15:45–17:30).
 - Nếu trùng với lớp học, CLB hoặc người mượn khác thì web báo lỗi.
-- Phiếu đăng ký được lưu vào Google Sheet, kèm email xác nhận cho người mượn.
+- Một lần đăng ký chọn được **nhiều khung giờ, nhiều ngày, nhiều tuần**: bấm ＋ Mượn trên lịch, xem lại và xác nhận từng tuần, rồi điền thông tin một lần.
+- Phiếu đăng ký được lưu vào Google Sheet (cùng một mã đăng ký, mỗi khung một dòng), kèm email xác nhận cho người mượn.
 
 ![Giao diện](xem-truoc.png)
 

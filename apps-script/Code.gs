@@ -15,6 +15,7 @@ const CONFIG = {
   ADMIN_EMAIL: '',                         // Email nhận thông báo mỗi khi có người đăng ký ('' = không gửi)
   SEND_CONFIRM_EMAIL: true,                // Gửi email xác nhận cho người mượn
   MAX_DAYS_AHEAD: 60,                      // Chỉ cho đăng ký trước tối đa bao nhiêu ngày
+  MAX_ITEMS: 60,                           // Số khung giờ tối đa trong 1 lần đăng ký
   SPREADSHEET_ID: '',                      // Để trống nếu dán code trong Apps Script của chính file Sheet
   TIMEZONE: 'Asia/Ho_Chi_Minh',
   SHEET_TKB: 'TKB',
@@ -90,28 +91,31 @@ function getData() {
     .map(b => ({ code: b.code, name: b.name, room: b.room, date: b.date, periods: b.periods,
       win: b.win, start: b.start, end: b.end, purpose: b.purpose, status: b.status }));
   return {
-    config: { school: CONFIG.SCHOOL_NAME, maxDaysAhead: CONFIG.MAX_DAYS_AHEAD },
+    config: { school: CONFIG.SCHOOL_NAME, maxDaysAhead: CONFIG.MAX_DAYS_AHEAD, maxItems: CONFIG.MAX_ITEMS },
     rooms: ROOMS, subjects: SUBJECTS, days: DAYS,
     periods: tkb.periods, timetable: tkb.timetable, windows: tkb.windows, winTT: tkb.winTT, bookings: bookings
   };
 }
 
-/** Nhận phiếu đăng ký từ web. */
+/**
+ * Nhận phiếu đăng ký từ web.
+ * Một phiếu có thể gồm NHIỀU khung thời gian (nhiều ngày, nhiều tuần, cả 2 phòng):
+ *   f.items = [{room, date, periods:[2,3]} hoặc {room, date, win:'Cuối giờ học', start:'16:00', end:'17:00'}, ...]
+ * Tất cả khung được kiểm tra trùng; chỉ cần 1 khung trùng là KHÔNG ghi khung nào.
+ */
 function submitBooking(f) {
   f = f || {};
-  const data = {
+  const c = {
     name: clean_(f.name, 80), email: clean_(f.email, 120).toLowerCase(),
-    phone: clean_(f.phone, 20).replace(/[\s.\-]/g, ''), room: clean_(f.room, 10),
-    date: clean_(f.date, 10), purpose: clean_(f.purpose, 500),
-    students: clean_(f.students, 5), agree: f.agree === true,
-    periods: (Array.isArray(f.periods) ? f.periods : []).map(Number)
-      .filter(p => p >= 1 && p <= 20).filter((p, i, a) => a.indexOf(p) === i).sort((a, b) => a - b),
-    win: clean_(f.win, 40), start: normTime_(clean_(f.start, 5)), end: normTime_(clean_(f.end, 5))
+    phone: clean_(f.phone, 20).replace(/[\s.\-]/g, ''), purpose: clean_(f.purpose, 500),
+    students: clean_(f.students, 5), agree: f.agree === true
   };
-  if (data.win) data.periods = []; else { data.start = ''; data.end = ''; }
-
-  const err = validate_(data);
+  const raw = Array.isArray(f.items) ? f.items : [f];          // [f]: tương thích bản cũ (1 khung)
+  if (raw.length > CONFIG.MAX_ITEMS) return { ok: false, type: 'invalid', message: 'Mỗi lần chỉ đăng ký tối đa ' + CONFIG.MAX_ITEMS + ' khung giờ.' };
+  const err = validateContact_(c);
   if (err) return { ok: false, type: 'invalid', message: err };
+  const groups = groupItems_(raw.map(normItem_));
+  if (!groups.length) return { ok: false, type: 'invalid', message: 'Vui lòng chọn ít nhất một khung thời gian trên lịch.' };
 
   const lock = LockService.getScriptLock();
   try { lock.waitLock(20000); } catch (e) {
@@ -122,51 +126,96 @@ function submitBooking(f) {
     const ss = getSS_();
     ensureSetup_(ss);
     const tkb = readTkb_(ss);
-    const err2 = validateTime_(data, tkb);
-    if (err2) return { ok: false, type: 'invalid', message: err2 };
+    for (let i = 0; i < groups.length; i++) {
+      const e2 = validateItem_(groups[i], tkb);
+      if (e2) return { ok: false, type: 'invalid', message: itemPrefix_(groups[i]) + ': ' + e2 };
+    }
+    // các khung trong cùng phiếu không được chồng lên nhau
+    for (let i = 0; i < groups.length; i++) for (let j = i + 1; j < groups.length; j++) {
+      const A = groups[i], B = groups[j];
+      if (A.room !== B.room || A.date !== B.date) continue;
+      const clash = bookingTimes_(tkb, A).some(x => bookingTimes_(tkb, B).some(y => toMin_(x.start) < toMin_(y.end) && toMin_(y.start) < toMin_(x.end)));
+      if (clash) return { ok: false, type: 'invalid', message: 'Các khung bạn chọn bị chồng giờ nhau: ' + itemPrefix_(A) + ' – ' + timeLabel_(tkb, A) + ' và ' + timeLabel_(tkb, B) + '.' };
+    }
 
-    const conflicts = findConflicts_(tkb, readBookings_(ss), data);
+    const bookings = readBookings_(ss);
+    let conflicts = [];
+    groups.forEach(g => findConflicts_(tkb, bookings, g).forEach(x => { x.when = itemPrefix_(g) + ' · ' + x.when; conflicts.push(x); }));
     if (conflicts.length) {
-      return { ok: false, type: 'conflict', message: 'Thời gian bạn chọn đã có người sử dụng phòng.', conflicts: conflicts };
+      return { ok: false, type: 'conflict', message: 'Có khung thời gian đã có người sử dụng phòng.', conflicts: conflicts };
     }
 
     const code = 'PM' + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyMMdd') + '-' + randomCode_(4);
-    const timeRange = data.win ? data.start + '–' + data.end : periodRange_(tkb.periods, data.periods);
-    const timeLabel = data.win ? data.win + ': ' + timeRange : 'Tiết ' + data.periods.join(', ') + ' (' + timeRange + ')';
-    const dayName = DAYS[dayIdx_(data.date)];
+    const sent = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm:ss');
     const sh = ss.getSheetByName(CONFIG.SHEET_BOOKINGS);
-    sh.appendRow([
-      Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'dd/MM/yyyy HH:mm:ss'), code, data.name, data.email,
-      data.phone, roomLabel_(data.room), data.date, dayName, data.win || data.periods.join(','), timeRange,
-      data.purpose, data.students, 'Đã cam kết', STATUS.NEW, ''
-    ].map(noFormula_));
+    const items = groups.map(g => {
+      const timeRange = g.win ? g.start + '–' + g.end : periodRange_(tkb.periods, g.periods);
+      sh.appendRow([sent, code, c.name, c.email, c.phone, roomLabel_(g.room), g.date, DAYS[dayIdx_(g.date)],
+        g.win || g.periods.join(','), timeRange, c.purpose, c.students, 'Đã cam kết', STATUS.NEW, ''].map(noFormula_));
+      return { room: g.room, roomLabel: roomLabel_(g.room), date: g.date, dayName: DAYS[dayIdx_(g.date)], timeLabel: timeLabel_(tkb, g) };
+    });
     SpreadsheetApp.flush();
-    booking = { code: code, name: data.name, email: data.email, room: data.room, roomLabel: roomLabel_(data.room),
-      date: data.date, dayName: dayName, periods: data.periods, win: data.win, start: data.start, end: data.end,
-      timeRange: timeRange, timeLabel: timeLabel, purpose: data.purpose };
+    booking = { code: code, name: c.name, email: c.email, purpose: c.purpose, items: items };
   } finally {
     lock.releaseLock();
   }
 
-  booking.emailSent = sendEmails_(booking, data);
+  booking.emailSent = sendEmails_(booking, c);
   return { ok: true, booking: booking };
 }
 
+function normItem_(it) {
+  it = it || {};
+  const g = {
+    room: clean_(it.room, 10), date: clean_(it.date, 10),
+    periods: (Array.isArray(it.periods) ? it.periods : []).map(Number).filter(p => p >= 1 && p <= 20),
+    win: clean_(it.win, 40), start: normTime_(clean_(it.start, 5)), end: normTime_(clean_(it.end, 5))
+  };
+  if (g.win) g.periods = []; else { g.start = ''; g.end = ''; }
+  return g;
+}
+
+/** Gộp các tiết cùng phòng + cùng ngày thành 1 dòng; sắp xếp theo ngày, phòng, giờ. */
+function groupItems_(items) {
+  const out = [], map = {};
+  items.forEach(it => {
+    if (!it.win && !it.periods.length) return;
+    if (it.win) { out.push(it); return; }
+    const k = it.room + '|' + it.date;
+    if (!map[k]) { map[k] = { room: it.room, date: it.date, periods: [], win: '', start: '', end: '' }; out.push(map[k]); }
+    it.periods.forEach(p => { if (map[k].periods.indexOf(p) < 0) map[k].periods.push(p); });
+  });
+  out.forEach(g => g.periods.sort((a, b) => a - b));
+  const key = g => g.date + g.room + (g.win ? g.start : ('0' + (g.periods[0] || 0)).slice(-2));
+  return out.sort((a, b) => key(a) < key(b) ? -1 : 1);
+}
+
+function itemPrefix_(g) {
+  const d = dayIdx_(g.date);
+  return (d >= 0 ? DAYS[d] + ' ' : '') + g.date.split('-').reverse().slice(0, 2).join('/') + ' · ' + g.room;
+}
+function timeLabel_(tkb, g) {
+  return g.win ? g.win + ' ' + g.start + '–' + g.end : 'Tiết ' + g.periods.join(', ') + ' (' + periodRange_(tkb.periods, g.periods) + ')';
+}
+
 // =================== KIỂM TRA ===================
-function validate_(d) {
+function validateContact_(d) {
   if (d.name.length < 2) return 'Vui lòng nhập họ và tên người mượn.';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(d.email)) return 'Email không hợp lệ.';
   if (!/^(0|\+84)\d{9,10}$/.test(d.phone)) return 'Số điện thoại không hợp lệ (VD: 0912345678).';
-  if (!ROOMS.some(r => r.id === d.room)) return 'Vui lòng chọn phòng máy.';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return 'Vui lòng chọn ngày mượn.';
-  if (dayIdx_(d.date) < 0) return 'Phòng máy chỉ cho mượn từ Thứ 2 đến Thứ 6.';
-  const today = todayStr_();
-  if (d.date < today) return 'Không thể đăng ký cho ngày đã qua.';
-  if (d.date > addDays_(today, CONFIG.MAX_DAYS_AHEAD)) return 'Chỉ được đăng ký trước tối đa ' + CONFIG.MAX_DAYS_AHEAD + ' ngày.';
-  if (!d.periods.length && !d.win) return 'Vui lòng chọn ít nhất 1 tiết hoặc một khung ngoài giờ.';
   if (d.purpose.length < 3) return 'Vui lòng ghi mục đích sử dụng.';
   if (!d.agree) return 'Bạn cần tích vào ô cam kết trước khi gửi.';
   return '';
+}
+
+function validateItem_(g, tkb) {
+  if (!ROOMS.some(r => r.id === g.room)) return 'Phòng không hợp lệ.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(g.date)) return 'Ngày không hợp lệ.';
+  if (dayIdx_(g.date) < 0) return 'Phòng máy chỉ cho mượn từ Thứ 2 đến Thứ 6.';
+  const today = todayStr_();
+  if (g.date < today) return 'Ngày này đã qua.';
+  if (g.date > addDays_(today, CONFIG.MAX_DAYS_AHEAD)) return 'Chỉ được đăng ký trước tối đa ' + CONFIG.MAX_DAYS_AHEAD + ' ngày.';
+  return validateTime_(g, tkb);
 }
 
 function validateTime_(d, tkb) {
@@ -331,27 +380,28 @@ function migrateWindows_(sh) {
 // =================== EMAIL ===================
 function sendEmails_(b, d) {
   let sent = false;
-  const dateVN = b.date.split('-').reverse().join('/');
+  const list = b.items.map(it => '<tr><td style="background:#eef7fe">' + esc_(it.dayName + ', ' + it.date.split('-').reverse().join('/')) +
+    '</td><td>' + esc_(it.roomLabel) + '</td><td>' + esc_(it.timeLabel) + '</td></tr>').join('');
   const html =
     '<div style="font-family:Arial,sans-serif;font-size:14px;color:#23324a">' +
     '<h2 style="color:#1f6fa0">Xác nhận đăng ký phòng máy</h2>' +
     '<p>Xin chào <b>' + esc_(b.name) + '</b>, phiếu đăng ký của bạn đã được ghi nhận.</p>' +
+    '<p>Mã đăng ký: <b style="font-size:18px;color:#cc6a12">' + esc_(b.code) + '</b> &nbsp;·&nbsp; Mục đích: ' + esc_(b.purpose) + '</p>' +
     '<table cellpadding="6" style="border-collapse:collapse;border:1px solid #cfe8fc">' +
-    row_('Mã đăng ký', b.code) + row_('Phòng', b.roomLabel) + row_('Ngày', b.dayName + ', ' + dateVN) +
-    row_('Thời gian', b.timeLabel) + row_('Mục đích', b.purpose) + '</table>' +
+    '<tr style="background:#cfe8fc"><th align="left">Ngày</th><th align="left">Phòng</th><th align="left">Thời gian</th></tr>' + list + '</table>' +
     '<p>Bạn đã cam kết sử dụng phòng máy đúng mục đích, đúng thời gian và tuân thủ nội quy phòng máy.</p>' +
     '<p style="color:#888">Muốn hủy lịch, vui lòng liên hệ người quản lý phòng máy và cung cấp mã đăng ký.</p></div>';
-  const subject = '[Phòng máy] Xác nhận mượn ' + b.roomLabel + ' – ' + dateVN + ' – Mã ' + b.code;
+  const first = b.items[0].date.split('-').reverse().join('/');
+  const subject = '[Phòng máy] Xác nhận mượn ' + b.items.length + ' khung giờ (từ ' + first + ') – Mã ' + b.code;
   try {
     if (CONFIG.SEND_CONFIRM_EMAIL) { MailApp.sendEmail({ to: b.email, subject: subject, htmlBody: html }); sent = true; }
     if (CONFIG.ADMIN_EMAIL) {
-      MailApp.sendEmail({ to: CONFIG.ADMIN_EMAIL, subject: '[Phòng máy] Đăng ký mới: ' + b.name + ' – ' + dateVN,
+      MailApp.sendEmail({ to: CONFIG.ADMIN_EMAIL, subject: '[Phòng máy] Đăng ký mới: ' + b.name + ' – ' + b.items.length + ' khung giờ',
         htmlBody: html + '<p>SĐT: ' + esc_(d.phone) + ' – Email: ' + esc_(d.email) + '</p>' });
     }
   } catch (e) { Logger.log('Lỗi gửi mail: ' + e); }
   return sent;
 }
-function row_(k, v) { return '<tr><td style="background:#eef7fe"><b>' + k + '</b></td><td>' + esc_(v) + '</td></tr>'; }
 
 // =================== TIỆN ÍCH ===================
 function getSS_() { return CONFIG.SPREADSHEET_ID ? SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID) : SpreadsheetApp.getActive(); }
